@@ -1,0 +1,7 @@
+.DS_Store
+*.pyc
+creds/
+nitro_api.log
+server.log
+server.log.1
+server.conf
