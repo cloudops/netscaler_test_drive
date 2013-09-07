@@ -8,6 +8,8 @@ Setup and usage for the control panel...
 INSTALL
 -------
 (make sure python 2.7 is installed...)
+$ yum install git (if you will be pulling the repo)
+$ yum install python-pip
 $ pip install boto
 $ pip install bottle
 $ pip install rocket

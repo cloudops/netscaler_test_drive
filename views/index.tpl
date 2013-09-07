@@ -167,8 +167,20 @@
           },1000);
 
           var netscaler_timeout;
+          var netscaler_config_save;
           $(".netscaler .iphone-toggle-buttons input").on('change', function(e) {
             clearTimeout(netscaler_timeout);
+            clearTimeout(netscaler_config_save);
+            $('.netscaler .status .processing .loader-text').html("Saving in <span>5</span>...");
+            $('.netscaler .status .message').hide();
+            $('.netscaler .status').show();
+            $('.netscaler .status .processing').fadeIn();
+            netscaler_config_save = setInterval(function(){
+              sec=parseInt($('.netscaler .status .processing .loader-text span').html()); 
+              if (sec != 0) {
+                $('.netscaler .status .processing .loader-text span').html(sec-1);
+              }
+            },1000);
             netscaler_timeout = setTimeout(function() {
               var params = '';
               var inputs = $(".netscaler .iphone-toggle-buttons input");
@@ -185,33 +197,46 @@
               $.ajax('/netscaler_config'+params, {
                 beforeSend: function(jqXHR, settings) {
                   $('.netscaler .status').show();
+                  $('.netscaler .status .processing .loader-text').html("Updating config...");
                   $('.netscaler .status .processing').fadeIn();
                   $('.netscaler .status .message').hide();
                 },
                 success: function(data, textStatus, jqXHR) {
-                  console.log(data);
+                  //console.log(data);
                   $('.netscaler .status .processing').fadeOut();
                   $('.netscaler .status .message').html("Config saved...");
                   $('.netscaler .status .message').fadeIn();
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
-                  console.log(jqXHR, textStatus, errorThrown);
+                  //console.log(jqXHR, textStatus, errorThrown);
                   $('.netscaler .status .processing').fadeOut();
                   $('.netscaler .status .message').html("Error: "+errorThrown);
                   $('.netscaler .status .message').fadeIn();
                 },
                 complete: function(jqXHR, textStatus) {
                   setTimeout(function() {
-                    $('.netscaler .status').fadeOut();
-                  }, 3000)
+                    $('.netscaler .status .message').fadeOut();
+                  }, 5000)
                 }
               });
-            }, 2000);
+            }, 5000);
           });
 
           var loader_timeout;
+          var loader_config_save;
           $(".loader .iphone-toggle-buttons input").on('change', function(e) {
             clearTimeout(loader_timeout);
+            clearTimeout(loader_config_save);
+            $('.loader .status .processing .loader-text').html("Saving in <span>5</span>...");
+            $('.loader .status .message').hide();
+            $('.loader .status').show();
+            $('.loader .status .processing').fadeIn();
+            loader_config_save = setInterval(function(){
+              sec=parseInt($('.loader .status .processing .loader-text span').html()); 
+              if (sec != 0) {
+                $('.loader .status .processing .loader-text span').html(sec-1);
+              }
+            },1000);
             loader_timeout = setTimeout(function() {
               var params = '';
               var inputs = $(".loader .iphone-toggle-buttons input");
@@ -233,28 +258,29 @@
               $.ajax('/loader_config'+params, {
                 beforeSend: function(jqXHR, settings) {
                   $('.loader .status').show();
+                  $('.loader .status .processing .loader-text').html("Updating config...");
                   $('.loader .status .processing').fadeIn();
                   $('.loader .status .message').hide();
                 },
                 success: function(data, textStatus, jqXHR) {
-                  console.log(data);
+                  //console.log(data);
                   $('.loader .status .processing').fadeOut();
                   $('.loader .status .message').html("Config saved...");
                   $('.loader .status .message').fadeIn();
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
-                  console.log(jqXHR, textStatus, errorThrown);
+                  //console.log(jqXHR, textStatus, errorThrown);
                   $('.loader .status .processing').fadeOut();
                   $('.loader .status .message').html("Error: "+errorThrown);
                   $('.loader .status .message').fadeIn();
                 },
                 complete: function(jqXHR, textStatus) {
                   setTimeout(function() {
-                    $('.loader .status').fadeOut();
-                  }, 3000)
+                    $('.loader .status .message').fadeOut();
+                  }, 5000)
                 }
               });
-            }, 2000);
+            }, 5000);
           });
 
         });
