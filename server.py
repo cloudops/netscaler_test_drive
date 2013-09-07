@@ -51,10 +51,7 @@ log.addHandler(logging.handlers.RotatingFileHandler('server.log', maxBytes=51200
 @bottle.route('/')
 @bottle.view('index')
 def index():
-	return dict({
-		"title":"Console",
-		"content":"Welcome to the console..."
-	})
+	return dict()
 
 @bottle.route('/netscaler_config')
 def netscaler_config():
