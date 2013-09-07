@@ -9,281 +9,276 @@
     <script type="text/javascript" src="/static/js/json2.js"></script>
     <script type="text/javascript" src="http://www.google.com/jsapi"></script>
     <script type="text/javascript">
-        google.load('visualization', '1', {packages: ['annotatedtimeline']});
+      google.load('visualization', '1', {packages: ['annotatedtimeline']});
     </script>
     <script type="text/javascript">
-        function drawVisualizations() {
-          // "start_time" and "end_time" are already defined in config.py:
-          //end_time = new Date;
-          //start_time = new Date;
-          //start_time.setDate(end_time.getDate()-1);
-          //end_time.setDate(end_time.getDate());
-          var cpu_qa = {  
-            "namespace": "AWS/EC2",       // CloudWatch namespace (string)
-            "metric": "CPUUtilization",   // CloudWatch metric (string)
-            "unit": "Percent",            // CloudWatch unit (string)
-            "statistics": ["Average"],      // CloudWatch statistics (list of strings)
-            "period": 600,                // CloudWatch period (int)
-            "cloudwatch_queries":         // (list of dictionaries)
-            [   
-              {
-                "prefix": "CPU ",   // label prefix for associated data sets (string)
-                "dimensions": { "InstanceId": "i-f361b7c4"}, // CloudWatch dimensions (dictionary)
-                "region": "us-west-2"
-              }
-            ]
-          };
+      var countdown;
+      function drawVisualizations() {
+        $(".refresh-in").html(59);
+        clearInterval(countdown);
+        countdown = setInterval(function(){
+          sec=parseInt($(".refresh-in").html()); 
+          if (sec != 0) {
+            $(".refresh-in").html(sec-1);
+          }
+        },1000);
 
-          var mem_qa = {  
-            "namespace": "System/Linux",       // CloudWatch namespace (string)
-            "metric": "MemoryUtilization",   // CloudWatch metric (string)
-            "unit": "Percent",            // CloudWatch unit (string)
-            "statistics": ["Average"],      // CloudWatch statistics (list of strings)
-            "period": 600,                // CloudWatch period (int)
-            "cloudwatch_queries":         // (list of dictionaries)
-            [   
-              {
-                "prefix": "Memory ",   // label prefix for associated data sets (string)
-                "dimensions": { "InstanceId": "i-f361b7c4"}, // CloudWatch dimensions (dictionary)
-                "region": "us-west-2"
-              }
-            ]
-          };
-
-          var network_in_qa = {  
-            "namespace": "AWS/EC2",       // CloudWatch namespace (string)
-            "metric": "NetworkIn",   // CloudWatch metric (string)
-            "unit": "Bytes",            // CloudWatch unit (string)
-            "statistics": ["Average"],      // CloudWatch statistics (list of strings)
-            "period": 600,                // CloudWatch period (int)
-            "cloudwatch_queries":         // (list of dictionaries)
-            [   
-              {
-                "prefix": "Network In ",   // label prefix for associated data sets (string)
-                "dimensions": { "InstanceId": "i-f361b7c4"}, // CloudWatch dimensions (dictionary)
-                "region": "us-west-2"
-              }
-            ]
-          };
-
-          var network_out_qa = {  
-            "namespace": "AWS/EC2",       // CloudWatch namespace (string)
-            "metric": "NetworkOut",   // CloudWatch metric (string)
-            "unit": "Bytes",            // CloudWatch unit (string)
-            "statistics": ["Average"],      // CloudWatch statistics (list of strings)
-            "period": 600,                // CloudWatch period (int)
-            "cloudwatch_queries":         // (list of dictionaries)
-            [   
-              {
-                "prefix": "Network Out ",   // label prefix for associated data sets (string)
-                "dimensions": { "InstanceId": "i-f361b7c4"}, // CloudWatch dimensions (dictionary)
-                "region": "us-west-2"
-              }
-            ]
-          };
-
-
-          var cpu_query = new google.visualization.Query('http://'+window.location.host+'/get_data?qs='+JSON.stringify(cpu_qa));
-          cpu_query.send(function(response) {
-            if (response.isError()) {
-              alert('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
-              return;
+        var cpu_qa = {  
+          "namespace": "AWS/EC2",       // CloudWatch namespace (string)
+          "metric": "CPUUtilization",   // CloudWatch metric (string)
+          "unit": "Percent",            // CloudWatch unit (string)
+          "statistics": ["Average"],      // CloudWatch statistics (list of strings)
+          "period": 600,                // CloudWatch period (int)
+          "cloudwatch_queries":         // (list of dictionaries)
+          [   
+            {
+              "prefix": "CPU ",   // label prefix for associated data sets (string)
+              "dimensions": { "InstanceId": "i-f361b7c4"}, // CloudWatch dimensions (dictionary)
+              "region": "us-west-2"
             }
-        
-            var data = response.getDataTable();
-            var visualization = new google.visualization.AnnotatedTimeLine(document.getElementById('cpu_utilization'));
-            visualization.draw(data, { 
-              'allowRedraw': true, 
-              'displayAnnotations': false, 
-              'fill': 20,
-              'legendPosition': 'newRow',
-              'allValuesSuffix': '%'})
-          });
+          ]
+        };
 
-          var mem_query = new google.visualization.Query('http://'+window.location.host+'/get_data?qs='+JSON.stringify(mem_qa));
-          mem_query.send(function(response) {
-            if (response.isError()) {
-              alert('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
-              return;
+        var mem_qa = {  
+          "namespace": "System/Linux",       // CloudWatch namespace (string)
+          "metric": "MemoryUtilization",   // CloudWatch metric (string)
+          "unit": "Percent",            // CloudWatch unit (string)
+          "statistics": ["Average"],      // CloudWatch statistics (list of strings)
+          "period": 600,                // CloudWatch period (int)
+          "cloudwatch_queries":         // (list of dictionaries)
+          [   
+            {
+              "prefix": "Memory ",   // label prefix for associated data sets (string)
+              "dimensions": { "InstanceId": "i-f361b7c4"}, // CloudWatch dimensions (dictionary)
+              "region": "us-west-2"
             }
-        
-            var data = response.getDataTable();
-            var visualization = new google.visualization.AnnotatedTimeLine(document.getElementById('mem_utilization'));
-            visualization.draw(data, {   
-              'allowRedraw': true,
-              'displayAnnotations': false, 
-              'fill': 20,
-              'legendPosition': 'newRow',
-              'allValuesSuffix': '%'})
-          });
+          ]
+        };
 
-          var network_in_query = new google.visualization.Query('http://'+window.location.host+'/get_data?qs='+JSON.stringify(network_in_qa));
-          network_in_query.send(function(response) {
-            if (response.isError()) {
-              alert('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
-              return;
+        var network_in_qa = {  
+          "namespace": "AWS/EC2",       // CloudWatch namespace (string)
+          "metric": "NetworkIn",   // CloudWatch metric (string)
+          "unit": "Bytes",            // CloudWatch unit (string)
+          "statistics": ["Average"],      // CloudWatch statistics (list of strings)
+          "period": 600,                // CloudWatch period (int)
+          "cloudwatch_queries":         // (list of dictionaries)
+          [   
+            {
+              "prefix": "Network In ",   // label prefix for associated data sets (string)
+              "dimensions": { "InstanceId": "i-f361b7c4"}, // CloudWatch dimensions (dictionary)
+              "region": "us-west-2"
             }
-        
-            var data = response.getDataTable();
-            var visualization = new google.visualization.AnnotatedTimeLine(document.getElementById('network_in'));
-            visualization.draw(data, {   
-              'allowRedraw': true,
-              'displayAnnotations': false, 
-              'fill': 20,
-              'legendPosition': 'newRow',
-              'allValuesSuffix': 'Bytes'})
-          });
+          ]
+        };
 
-          var network_out_query = new google.visualization.Query('http://'+window.location.host+'/get_data?qs='+JSON.stringify(network_out_qa));
-          network_out_query.send(function(response) {
-            if (response.isError()) {
-              alert('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
-              return;
+        var network_out_qa = {  
+          "namespace": "AWS/EC2",       // CloudWatch namespace (string)
+          "metric": "NetworkOut",   // CloudWatch metric (string)
+          "unit": "Bytes",            // CloudWatch unit (string)
+          "statistics": ["Average"],      // CloudWatch statistics (list of strings)
+          "period": 600,                // CloudWatch period (int)
+          "cloudwatch_queries":         // (list of dictionaries)
+          [   
+            {
+              "prefix": "Network Out ",   // label prefix for associated data sets (string)
+              "dimensions": { "InstanceId": "i-f361b7c4"}, // CloudWatch dimensions (dictionary)
+              "region": "us-west-2"
             }
-        
-            var data = response.getDataTable();
-            var visualization = new google.visualization.AnnotatedTimeLine(document.getElementById('network_out'));
-            visualization.draw(data, {   
-              'allowRedraw': true,
-              'displayAnnotations': false, 
-              'fill': 20,
-              'legendPosition': 'newRow',
-              'allValuesSuffix': 'Bytes'})
-          });
-        }
-        
-        google.setOnLoadCallback(drawVisualizations);
+          ]
+        };
 
-        $(function() {
-          setInterval('drawVisualizations()', 60000);
 
-          var countdown = setInterval(function(){
-            sec=parseInt($(".refresh-in").html()); 
+        var cpu_query = new google.visualization.Query('http://'+window.location.host+'/get_data?qs='+JSON.stringify(cpu_qa));
+        cpu_query.send(function(response) {
+          if (response.isError()) {
+            alert('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+            return;
+          }
+      
+          var data = response.getDataTable();
+          var visualization = new google.visualization.AnnotatedTimeLine(document.getElementById('cpu_utilization'));
+          visualization.draw(data, { 
+            'allowRedraw': true, 
+            'displayAnnotations': false, 
+            'fill': 20,
+            'legendPosition': 'newRow',
+            'allValuesSuffix': '%'})
+        });
+
+        var mem_query = new google.visualization.Query('http://'+window.location.host+'/get_data?qs='+JSON.stringify(mem_qa));
+        mem_query.send(function(response) {
+          if (response.isError()) {
+            alert('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+            return;
+          }
+      
+          var data = response.getDataTable();
+          var visualization = new google.visualization.AnnotatedTimeLine(document.getElementById('mem_utilization'));
+          visualization.draw(data, {   
+            'allowRedraw': true,
+            'displayAnnotations': false, 
+            'fill': 20,
+            'legendPosition': 'newRow',
+            'allValuesSuffix': '%'})
+        });
+
+        var network_in_query = new google.visualization.Query('http://'+window.location.host+'/get_data?qs='+JSON.stringify(network_in_qa));
+        network_in_query.send(function(response) {
+          if (response.isError()) {
+            alert('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+            return;
+          }
+      
+          var data = response.getDataTable();
+          var visualization = new google.visualization.AnnotatedTimeLine(document.getElementById('network_in'));
+          visualization.draw(data, {   
+            'allowRedraw': true,
+            'displayAnnotations': false, 
+            'fill': 20,
+            'legendPosition': 'newRow',
+            'allValuesSuffix': 'Bytes'})
+        });
+
+        var network_out_query = new google.visualization.Query('http://'+window.location.host+'/get_data?qs='+JSON.stringify(network_out_qa));
+        network_out_query.send(function(response) {
+          if (response.isError()) {
+            alert('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+            return;
+          }
+      
+          var data = response.getDataTable();
+          var visualization = new google.visualization.AnnotatedTimeLine(document.getElementById('network_out'));
+          visualization.draw(data, {   
+            'allowRedraw': true,
+            'displayAnnotations': false, 
+            'fill': 20,
+            'legendPosition': 'newRow',
+            'allValuesSuffix': 'Bytes'})
+        });
+      }
+      
+      google.setOnLoadCallback(drawVisualizations);
+      setInterval('drawVisualizations()', 60000);
+
+      $(function() {
+        var netscaler_timeout;
+        var netscaler_config_save;
+        $(".netscaler .iphone-toggle-buttons input").on('change', function(e) {
+          clearTimeout(netscaler_timeout);
+          clearTimeout(netscaler_config_save);
+          $('.netscaler .status .processing .loader-text').html("Saving in <span>5</span>...");
+          $('.netscaler .status .message').hide();
+          $('.netscaler .status').show();
+          $('.netscaler .status .processing').fadeIn();
+          netscaler_config_save = setInterval(function(){
+            sec=parseInt($('.netscaler .status .processing .loader-text span').html()); 
             if (sec != 0) {
-              $(".refresh-in").html(sec-1);
-            } else { // countdown is finished, reset...
-              $(".refresh-in").html(59);
+              $('.netscaler .status .processing .loader-text span').html(sec-1);
             }
           },1000);
-
-          var netscaler_timeout;
-          var netscaler_config_save;
-          $(".netscaler .iphone-toggle-buttons input").on('change', function(e) {
-            clearTimeout(netscaler_timeout);
-            clearTimeout(netscaler_config_save);
-            $('.netscaler .status .processing .loader-text').html("Saving in <span>5</span>...");
-            $('.netscaler .status .message').hide();
-            $('.netscaler .status').show();
-            $('.netscaler .status .processing').fadeIn();
-            netscaler_config_save = setInterval(function(){
-              sec=parseInt($('.netscaler .status .processing .loader-text span').html()); 
-              if (sec != 0) {
-                $('.netscaler .status .processing .loader-text span').html(sec-1);
+          netscaler_timeout = setTimeout(function() {
+            var params = '';
+            var inputs = $(".netscaler .iphone-toggle-buttons input");
+            inputs.each(function(i, el) {
+              var name = $(el).attr('name');
+              var value = $(el).is(':checked');
+              if (params == '') {
+                params += '?'+name+'='+value
+              } else {
+                params += '&'+name+'='+value
               }
-            },1000);
-            netscaler_timeout = setTimeout(function() {
-              var params = '';
-              var inputs = $(".netscaler .iphone-toggle-buttons input");
-              inputs.each(function(i, el) {
-                var name = $(el).attr('name');
-                var value = $(el).is(':checked');
-                if (params == '') {
-                  params += '?'+name+'='+value
-                } else {
-                  params += '&'+name+'='+value
-                }
-              });
+            });
 
-              $.ajax('/netscaler_config'+params, {
-                beforeSend: function(jqXHR, settings) {
-                  $('.netscaler .status').show();
-                  $('.netscaler .status .processing .loader-text').html("Updating config...");
-                  $('.netscaler .status .processing').fadeIn();
-                  $('.netscaler .status .message').hide();
-                },
-                success: function(data, textStatus, jqXHR) {
-                  //console.log(data);
-                  $('.netscaler .status .processing').fadeOut();
-                  $('.netscaler .status .message').html("Config saved...");
-                  $('.netscaler .status .message').fadeIn();
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                  //console.log(jqXHR, textStatus, errorThrown);
-                  $('.netscaler .status .processing').fadeOut();
-                  $('.netscaler .status .message').html("Error: "+errorThrown);
-                  $('.netscaler .status .message').fadeIn();
-                },
-                complete: function(jqXHR, textStatus) {
-                  setTimeout(function() {
-                    $('.netscaler .status .message').fadeOut();
-                  }, 5000)
-                }
-              });
-            }, 5000);
-          });
-
-          var loader_timeout;
-          var loader_config_save;
-          $(".loader .iphone-toggle-buttons input").on('change', function(e) {
-            clearTimeout(loader_timeout);
-            clearTimeout(loader_config_save);
-            $('.loader .status .processing .loader-text').html("Saving in <span>5</span>...");
-            $('.loader .status .message').hide();
-            $('.loader .status').show();
-            $('.loader .status .processing').fadeIn();
-            loader_config_save = setInterval(function(){
-              sec=parseInt($('.loader .status .processing .loader-text span').html()); 
-              if (sec != 0) {
-                $('.loader .status .processing .loader-text span').html(sec-1);
+            $.ajax('/netscaler_config'+params, {
+              beforeSend: function(jqXHR, settings) {
+                $('.netscaler .status').show();
+                $('.netscaler .status .processing .loader-text').html("Updating config...");
+                $('.netscaler .status .processing').fadeIn();
+                $('.netscaler .status .message').hide();
+              },
+              success: function(data, textStatus, jqXHR) {
+                //console.log(data);
+                $('.netscaler .status .processing').fadeOut();
+                $('.netscaler .status .message').html("Config saved...");
+                $('.netscaler .status .message').fadeIn();
+              },
+              error: function(jqXHR, textStatus, errorThrown) {
+                //console.log(jqXHR, textStatus, errorThrown);
+                $('.netscaler .status .processing').fadeOut();
+                $('.netscaler .status .message').html("Error: "+errorThrown);
+                $('.netscaler .status .message').fadeIn();
+              },
+              complete: function(jqXHR, textStatus) {
+                setTimeout(function() {
+                  $('.netscaler .status .message').fadeOut();
+                }, 5000)
               }
-            },1000);
-            loader_timeout = setTimeout(function() {
-              var params = '';
-              var inputs = $(".loader .iphone-toggle-buttons input");
-              inputs.each(function(i, el) {
-                var name = $(el).attr('name');
-                var value;
-                if ($(el).attr('type') == 'checkbox') {
-                  value = $(el).is(':checked');
-                } else {
-                  value = $(el).val();
-                }
-                if (params == '') {
-                  params += '?'+name+'='+value
-                } else {
-                  params += '&'+name+'='+value
-                }
-              });
-
-              $.ajax('/loader_config'+params, {
-                beforeSend: function(jqXHR, settings) {
-                  $('.loader .status').show();
-                  $('.loader .status .processing .loader-text').html("Updating config...");
-                  $('.loader .status .processing').fadeIn();
-                  $('.loader .status .message').hide();
-                },
-                success: function(data, textStatus, jqXHR) {
-                  //console.log(data);
-                  $('.loader .status .processing').fadeOut();
-                  $('.loader .status .message').html("Config saved...");
-                  $('.loader .status .message').fadeIn();
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                  //console.log(jqXHR, textStatus, errorThrown);
-                  $('.loader .status .processing').fadeOut();
-                  $('.loader .status .message').html("Error: "+errorThrown);
-                  $('.loader .status .message').fadeIn();
-                },
-                complete: function(jqXHR, textStatus) {
-                  setTimeout(function() {
-                    $('.loader .status .message').fadeOut();
-                  }, 5000)
-                }
-              });
-            }, 5000);
-          });
-
+            });
+          }, 5000);
         });
+
+        var loader_timeout;
+        var loader_config_save;
+        $(".loader .iphone-toggle-buttons input").on('change', function(e) {
+          clearTimeout(loader_timeout);
+          clearTimeout(loader_config_save);
+          $('.loader .status .processing .loader-text').html("Saving in <span>5</span>...");
+          $('.loader .status .message').hide();
+          $('.loader .status').show();
+          $('.loader .status .processing').fadeIn();
+          loader_config_save = setInterval(function(){
+            sec=parseInt($('.loader .status .processing .loader-text span').html()); 
+            if (sec != 0) {
+              $('.loader .status .processing .loader-text span').html(sec-1);
+            }
+          },1000);
+          loader_timeout = setTimeout(function() {
+            var params = '';
+            var inputs = $(".loader .iphone-toggle-buttons input");
+            inputs.each(function(i, el) {
+              var name = $(el).attr('name');
+              var value;
+              if ($(el).attr('type') == 'checkbox') {
+                value = $(el).is(':checked');
+              } else {
+                value = $(el).val();
+              }
+              if (params == '') {
+                params += '?'+name+'='+value
+              } else {
+                params += '&'+name+'='+value
+              }
+            });
+
+            $.ajax('/loader_config'+params, {
+              beforeSend: function(jqXHR, settings) {
+                $('.loader .status').show();
+                $('.loader .status .processing .loader-text').html("Updating config...");
+                $('.loader .status .processing').fadeIn();
+                $('.loader .status .message').hide();
+              },
+              success: function(data, textStatus, jqXHR) {
+                //console.log(data);
+                $('.loader .status .processing').fadeOut();
+                $('.loader .status .message').html("Config saved...");
+                $('.loader .status .message').fadeIn();
+              },
+              error: function(jqXHR, textStatus, errorThrown) {
+                //console.log(jqXHR, textStatus, errorThrown);
+                $('.loader .status .processing').fadeOut();
+                $('.loader .status .message').html("Error: "+errorThrown);
+                $('.loader .status .message').fadeIn();
+              },
+              complete: function(jqXHR, textStatus) {
+                setTimeout(function() {
+                  $('.loader .status .message').fadeOut();
+                }, 5000)
+              }
+            });
+          }, 5000);
+        });
+
+      });
     </script>
 	</head>
 	<body>
