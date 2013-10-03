@@ -13,6 +13,7 @@ from nitro_api import NitroAPI
 import operator
 import os
 import json
+import requests
 # depends on 'rocket' server
 
 # conf file import if it exists
@@ -22,7 +23,10 @@ conf = ConfigParser({ # defaults
     'server_reloader':'False',
     'server_debug':'False',
     'aws_access_key':'',
-	'aws_secret_key':''
+	'aws_secret_key':'',
+	'ns_host':'',
+	'ns_user':'',
+	'ns_pass':''
 })
 
 # read in config if it exists
@@ -38,6 +42,10 @@ server_debug = True if conf.get('DEFAULT', 'server_debug').lower().strip() == "t
 aws_access_key = conf.get('DEFAULT', 'aws_access_key')
 aws_secret_key = conf.get('DEFAULT', 'aws_secret_key')
 
+ns_host = conf.get('DEFAULT', 'ns_host')
+ns_user = conf.get('DEFAULT', 'ns_user')
+ns_pass = conf.get('DEFAULT', 'ns_pass')
+
 # add server logging via the rocket server
 log = logging.getLogger('Rocket')
 if server_debug:
@@ -51,11 +59,14 @@ log.addHandler(logging.handlers.RotatingFileHandler('server.log', maxBytes=51200
 @bottle.route('/')
 @bottle.view('index')
 def index():
+	# check config and see if i need to setup anything on first run...
 	return dict()
+
 
 @bottle.route('/netscaler_config')
 def netscaler_config():
 	#api = NitroAPI(host=host, username=username, password=password)
+	log.info(bottle.request.query)
 
 	tcp_multiplexing = None
 	if bottle.request.query.tcp_multiplexing:
@@ -74,6 +85,19 @@ def netscaler_config():
 		"caching":caching,
 		"compression":compression
 	})
+
+
+@bottle.route('/netscaler_redirect')
+def netscaler_redirect():
+	#api = NitroAPI(host=ns_host, username=ns_user, password=ns_pass)
+	#api.request('/config/login', {
+	#    'login': {
+	#        'username':api.username,
+	#        'password':api.password
+	#    }
+	#})
+	#bottle.response.set_cookie('SESSID', api.http_session)
+	bottle.redirect('http://'+ns_host)
 
 
 @bottle.route('/loader_config')
@@ -158,7 +182,7 @@ def server_static(filepath):
     return bottle.static_file(filepath, root='./')
 
 
-
+# get the cloudwatch data and return it in a format usable by google charts
 def get_cloudwatch_data(cloudviz_query, request_id, aws_access_key_id=None, aws_secret_access_key=None):
 	"""    
 	CREDITS: 
@@ -168,8 +192,8 @@ def get_cloudwatch_data(cloudviz_query, request_id, aws_access_key_id=None, aws_
 	Query CloudWatch and return the results in a Google Visualizations API-friendly format
 
 	Arguments:
-	`cloudviz_query` -- (dict) parameters and values to be passed to CloudWatch (see README for more information)
-	`request_id` -- (int) Google Visualizations request ID passed as part of the "tqx" parameter
+	'cloudviz_query' -- (dict) parameters and values to be passed to CloudWatch
+	'request_id' -- (int) Google Visualizations request ID passed as part of the "tqx" parameter
 	"""
 	## CloudWatch variables
 	# The maximum number of datapoints CloudWatch will return for a given query
@@ -292,7 +316,6 @@ def get_cloudwatch_data(cloudviz_query, request_id, aws_access_key_id=None, aws_
 				description[args['prefix'][i]+stat] = ('number', args['prefix'][i]+stat)
 				columns.append(args['prefix'][i]+stat)
 	       
-
 	# Sort data and present    
 	data = sorted(rs, key=operator.itemgetter(u'Timestamp'))
 	data_table = gviz_api.DataTable(description)
