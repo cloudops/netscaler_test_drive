@@ -148,11 +148,13 @@ body {
 	list-style:none;
 	margin:0;
 	padding:10px;
-	margin-bottom:10px;
+	margin-bottom:15px;
 	position:relative;
+	border-top:1px solid #ccc;
 }
 .netscaler-profiles li.active {
-	background:#DFF7E8;
+	background:#E5EEFD;
+	border:0;
 }
 .netscaler-profiles .profile-name {
 	font-weight:bold;
@@ -165,13 +167,21 @@ body {
 	display:inline-block;
 	width:50px;
 	position:absolute;
-	top:10px;
-	right:10px;
+	top:7px;
+	right:17px;
 	text-align:right;
 }
 .netscaler-profiles .profile-apply button {
 	cursor:pointer;
+	background-color: #4684EE;
+	color:white;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border: 1px solid #ccc;
+	padding: 4px 10px;
+	font-weight:bold;
 }
 .netscaler-profiles li.active .profile-apply button {
 	cursor:default;
+	background-color:#7CA3E6;
 }
