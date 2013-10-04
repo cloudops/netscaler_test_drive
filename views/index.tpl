@@ -188,7 +188,12 @@
             </li>
             <li>
                 <div class="profile-name">Featured Config</div>
-                <div class="profile-desc">Take advantage of the NetScalers power by using Integrated Caching, Compression and more...</div>
+                <div class="profile-desc">Take advantage of the NetScalers power by using Integrated Caching, Compression and more.</div>
+                <div class="profile-apply"><button>Apply</button></div>
+            </li>
+            <li>
+                <div class="profile-name">Advanced Config</div>
+                <div class="profile-desc">Allow the NetScaler to dynamically update its config in order to optimize based on traffic patterns.</div>
                 <div class="profile-apply"><button>Apply</button></div>
             </li>
           </ul>
