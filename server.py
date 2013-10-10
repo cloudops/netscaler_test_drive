@@ -12,6 +12,7 @@ import logging.handlers
 from nitro_api import NitroAPI
 import operator
 import os
+import time
 import json
 import requests
 # depends on 'rocket' server
@@ -63,77 +64,28 @@ def index():
 	return dict()
 
 
-@bottle.route('/netscaler_config')
-def netscaler_config():
+@bottle.route('/apply_netscaler_profile')
+def apply_netscaler_profile():
 	#api = NitroAPI(host=host, username=username, password=password)
-	log.info(bottle.request.query)
+	profile = None
+	if bottle.request.query.profile:
+		profile = bottle.request.query.profile
 
-	tcp_multiplexing = None
-	if bottle.request.query.tcp_multiplexing:
-		tcp_multiplexing = bottle.request.query.tcp_multiplexing
-
-	caching = None
-	if bottle.request.query.caching:
-		caching = bottle.request.query.caching
-
-	compression = None
-	if bottle.request.query.compression:
-		compression = bottle.request.query.compression
-
+	time.sleep(1)
 	return dict({
-		"tcp_multiplex":tcp_multiplexing,
-		"caching":caching,
-		"compression":compression
+		"result":profile
 	})
 
 
 @bottle.route('/netscaler_redirect')
+@bottle.view('netscaler_redirect')
 def netscaler_redirect():
-	#api = NitroAPI(host=ns_host, username=ns_user, password=ns_pass)
-	#api.request('/config/login', {
-	#    'login': {
-	#        'username':api.username,
-	#        'password':api.password
-	#    }
-	#})
-	#bottle.response.set_cookie('SESSID', api.http_session)
-	bottle.redirect('http://'+ns_host)
-
-
-@bottle.route('/loader_config')
-def loader_config():
-	jitter = None
-	if bottle.request.query.jitter:
-		jitter = bottle.request.query.jitter
-
-	drop_packets = None
-	if bottle.request.query.drop_packets:
-		drop_packets = bottle.request.query.drop_packets
-
-	tcp_latency = None
-	if bottle.request.query.tcp_latency:
-		tcp_latency = bottle.request.query.tcp_latency
-
-	jitter_rate = None
-	if bottle.request.query.jitter_rate:
-		jitter_rate = bottle.request.query.jitter_rate
-
-	packet_drop_rate = None
-	if bottle.request.query.packet_drop_rate:
-		packet_drop_rate = bottle.request.query.packet_drop_rate
-
-	tcp_latency_rate = None
-	if bottle.request.query.tcp_latency_rate:
-		tcp_latency_rate = bottle.request.query.tcp_latency_rate
-
 	return dict({
-		"jitter":jitter,
-		"drop_packets":drop_packets,
-		"tcp_latency":tcp_latency,
-		"jitter_rate":jitter_rate,
-		"packet_drop_rate":packet_drop_rate,
-		"tcp_latency_rate":tcp_latency_rate
+		'ns_host':ns_host,
+		'ns_user':ns_user,
+		'ns_pass':ns_pass
 	})
+
 
 
 # get graphing data

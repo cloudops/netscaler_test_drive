@@ -165,10 +165,9 @@ body {
 }
 .netscaler-profiles .profile-apply {
 	display:inline-block;
-	width:50px;
 	position:absolute;
 	top:7px;
-	right:17px;
+	right:7px;
 	text-align:right;
 }
 .netscaler-profiles .profile-apply button {
@@ -184,4 +183,8 @@ body {
 .netscaler-profiles li.active .profile-apply button {
 	cursor:default;
 	background-color:#7CA3E6;
+}
+.netscaler-profiles .profile-apply button.loading {
+	margin-right:10px;
+	margin-top:-1px;
 }

@@ -1,6 +1,9 @@
 SSH
 ---
 ssh -i ~/.ssh/swill_ec2.pem ec2-user@ec2-54-213-97-239.us-west-2.compute.amazonaws.com
+ssh -i ~/.ssh/swill_ec2.pem ec2-user@54.200.81.235
+
+through ns: http://54.200.21.62/
 
 
 Setup and usage for the control panel...

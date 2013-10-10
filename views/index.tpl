@@ -161,7 +161,27 @@
       setInterval('drawVisualizations()', 60000);
 
       $(function() {
-        
+        // handle clicks of the 'apply' button for the profiles.
+        $('.netscaler-profiles .profile-apply button').on('click', function() {
+          var clicked_li = $(this).closest('li.profile');
+          var profile = $(clicked_li).attr('id');
+          $.ajax('/apply_netscaler_profile?profile='+profile, {
+            beforeSend: function(jqXHR, settings) {
+              $(clicked_li).find('.profile-apply button').addClass('loading').html('<img src="/static/images/ajax-loader-sml.gif" />');
+            },
+            success: function(data, textStatus, jqXHR) {
+              var active_li = $(clicked_li).siblings('.active');
+              $(active_li).find('.profile-apply button').removeAttr('disabled').text('Apply');
+              $(active_li).removeClass('active');
+
+              $(clicked_li).find('.profile-apply button').removeClass('loading').attr('disabled','disabled').text('Active');
+              $(clicked_li).addClass('active');
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+              $(clicked_li).find('.profile-apply button').removeClass('loading').text('Apply');
+            }
+          });
+        });
 
       });
     </script>
@@ -181,23 +201,28 @@
             Modify how the NetScaler delivers the content.
           </div>
           <ul class="netscaler-profiles">
-            <li class="active">
-                <div class="profile-name">Basic Config</div>
-                <div class="profile-desc">Don't use any special features.  This is the most basic configuration of the NetScaler.</div>
-                <div class="profile-apply"><button disabled>Active</button></div>
+            <li id="profile-1" class="profile active">
+                <div class="profile-name">Load Balancing</div>
+                <div class="profile-desc">Basic load balancing - a virtual server bound to a set of backend servers with default health monitors and a simple LB metric, like least connections</div>
+                <div class="profile-apply"><button disabled>Active</button></div
             </li>
-            <li>
-                <div class="profile-name">Featured Config</div>
-                <div class="profile-desc">Take advantage of the NetScalers power by using Integrated Caching, Compression and more.</div>
+            <li id="profile-2" class="profile">
+                <div class="profile-name">Acceleration</div>
+                <div class="profile-desc">Server acceleration - basic LB + TCP multi-plexing + content caching</div>
                 <div class="profile-apply"><button>Apply</button></div>
             </li>
-            <li>
-                <div class="profile-name">Advanced Config</div>
-                <div class="profile-desc">Allow the NetScaler to dynamically update its config in order to optimize based on traffic patterns.</div>
+            <li id="profile-3" class="profile">
+                <div class="profile-name">Switching</div>
+                <div class="profile-desc">L7 switching - switching based on a specific HTTP header fields (eg: URL, cookie or user-agent)</div>
+                <div class="profile-apply"><button>Apply</button></div>
+            </li>
+            <li id="profile-4" class="profile">
+                <div class="profile-name">Optimization</div>
+                <div class="profile-desc">Content optimization including compression</div>
                 <div class="profile-apply"><button>Apply</button></div>
             </li>
           </ul>
-          <div class="control-footer">Go to the <a href="#">Netscaler Config</a> or <a href="#">Action Analytics</a></div>
+          <div class="control-footer">Go to the <a href="#">Netscaler Config</a></div>
         </div>
         <div class="clear"> </div>
         <div class="section-footer">It will take a few minutes for the graphs to reflect config changes.</div>
