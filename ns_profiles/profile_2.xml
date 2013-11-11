@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<template>
+<?xml version="1.0" encoding="UTF-8"?><template>
   <template_info>
     <application_name>profile_2</application_name>
     <templateversion_major/>
@@ -9,7 +8,7 @@
     <summary/>
     <version_major>10</version_major>
     <version_minor>1</version_minor>
-    <build_number>120.13</build_number>
+    <build_number>119.7</build_number>
   </template_info>
   <apptemplate>
     <compression>

@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<template>
+<?xml version="1.0" encoding="UTF-8"?><template>
   <template_info>
     <application_name>profile_3</application_name>
     <templateversion_major/>
@@ -9,7 +8,7 @@
     <summary/>
     <version_major>10</version_major>
     <version_minor>1</version_minor>
-    <build_number>120.13</build_number>
+    <build_number>119.7</build_number>
   </template_info>
   <apptemplate>
     <policy>
@@ -65,7 +64,6 @@
         <clttimeout>180</clttimeout>
         <somethod>NONE</somethod>
         <sopersistence>DISABLED</sopersistence>
-        <sopersistencetimeout>2</sopersistencetimeout>
         <healththreshold>0</healththreshold>
         <redirectportrewrite>DISABLED</redirectportrewrite>
         <downstateflush>DISABLED</downstateflush>
@@ -88,8 +86,6 @@
         <skippersistency>None</skippersistency>
         <td>0</td>
         <macmoderetainvlan>DISABLED</macmoderetainvlan>
-        <dns64>DISABLED</dns64>
-        <bypassaaaa>NO</bypassaaaa>
       </appunit>
       <appunit>
         <name>Image_Rule</name>
@@ -116,7 +112,6 @@
         <clttimeout>180</clttimeout>
         <somethod>NONE</somethod>
         <sopersistence>DISABLED</sopersistence>
-        <sopersistencetimeout>2</sopersistencetimeout>
         <healththreshold>0</healththreshold>
         <redirectportrewrite>DISABLED</redirectportrewrite>
         <downstateflush>DISABLED</downstateflush>
@@ -139,8 +134,6 @@
         <skippersistency>None</skippersistency>
         <td>0</td>
         <macmoderetainvlan>DISABLED</macmoderetainvlan>
-        <dns64>DISABLED</dns64>
-        <bypassaaaa>NO</bypassaaaa>
       </appunit>
       <appunit>
         <name>None_Image_Rule</name>
@@ -167,7 +160,6 @@
         <clttimeout>180</clttimeout>
         <somethod>NONE</somethod>
         <sopersistence>DISABLED</sopersistence>
-        <sopersistencetimeout>2</sopersistencetimeout>
         <healththreshold>0</healththreshold>
         <redirectportrewrite>DISABLED</redirectportrewrite>
         <downstateflush>DISABLED</downstateflush>
@@ -190,8 +182,6 @@
         <skippersistency>None</skippersistency>
         <td>0</td>
         <macmoderetainvlan>DISABLED</macmoderetainvlan>
-        <dns64>DISABLED</dns64>
-        <bypassaaaa>NO</bypassaaaa>
       </appunit>
     </appunit_list>
   </apptemplate>
