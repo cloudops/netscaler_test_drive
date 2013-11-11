@@ -76,7 +76,7 @@ def index():
 
 	# configure the active profile on page load...
 	profile = conf.get('NETSCALER', 'active_profile')
-	with NitroAPI(host=conf.get('NETSCALER', 'ns_host'), username=conf.get('NETSCALER', 'ns_user'), password=conf.get('NETSCALER', 'ns_pass'), logging=False) as api:
+	with NitroAPI(host=conf.get('NETSCALER', 'ns_host'), username=conf.get('NETSCALER', 'ns_user'), password=conf.get('NETSCALER', 'ns_pass'), logging=server_debug) as api:
 		# try and blow away all the potential configs
 		try:
 			api.request('/config/application?args=appname:profile_1', method='DELETE')
@@ -121,7 +121,7 @@ def apply_netscaler_profile():
 		profile = bottle.request.query.profile
 		active_profile = conf.get('NETSCALER', 'active_profile')
 
-		with NitroAPI(host=conf.get('NETSCALER', 'ns_host'), username=conf.get('NETSCALER', 'ns_user'), password=conf.get('NETSCALER', 'ns_pass'), logging=False) as api:
+		with NitroAPI(host=conf.get('NETSCALER', 'ns_host'), username=conf.get('NETSCALER', 'ns_user'), password=conf.get('NETSCALER', 'ns_pass'), logging=server_debug) as api:
 			# try and blow away all the potential configs
 			try:
 				api.request('/config/application?args=appname:'+active_profile, method='DELETE')
