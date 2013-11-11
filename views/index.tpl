@@ -222,17 +222,17 @@
           <ul class="netscaler-profiles">
             <li id="profile_1" class="profile">
                 <div class="profile-name">Load Balancing</div>
-                <div class="profile-desc">Basic load balancing - a virtual server bound to a set of backend servers with default health monitors and a simple LB metric, like least connections</div>
+                <div class="profile-desc">Spread traffic across multiple backend web servers</div>
                 <div class="profile-apply"><button>Apply</button></div
             </li>
             <li id="profile_2" class="profile">
                 <div class="profile-name">Acceleration &amp; Optimization</div>
-                <div class="profile-desc">Server acceleration - basic LB + content caching + compression</div>
+                <div class="profile-desc">Optimize the load balanced traffic with caching and compression</div>
                 <div class="profile-apply"><button>Apply</button></div>
             </li>
             <li id="profile_3" class="profile">
                 <div class="profile-name">Switching</div>
-                <div class="profile-desc">L7 switching - server HTML pages from one server and images from the other</div>
+                <div class="profile-desc">Utilize L7 content switching to serve different workloads from each web server</div>
                 <div class="profile-apply"><button>Apply</button></div>
             </li>
           </ul>
