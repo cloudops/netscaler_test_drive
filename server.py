@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 # Check the 'readme.txt' for install instructions
+import boto
 import boto.ec2.cloudwatch
-from boto.ec2.cloudwatch.metric import Metric
 import bottle
 from ConfigParser import ConfigParser
 from datetime import datetime, timedelta
@@ -17,18 +17,32 @@ import json
 import requests
 # depends on 'rocket' server
 
-# conf file import if it exists
-conf = ConfigParser({ # defaults
-	'server_host':'0.0.0.0',
-    'server_port':'80',
-    'server_reloader':'False',
-    'server_debug':'False',
-    'aws_access_key':'',
-	'aws_secret_key':'',
-	'ns_host':'',
-	'ns_user':'',
-	'ns_pass':''
-})
+# setup the conf object and set default values...
+conf = ConfigParser()
+
+conf.set('DEFAULT', 'configured', 'True')
+
+conf.set('DEFAULT', 'server_host', '0.0.0.0')
+conf.set('DEFAULT', 'server_port', '80')
+conf.set('DEFAULT', 'server_reloader', 'False')
+conf.set('DEFAULT', 'server_debug', 'False')
+
+conf.add_section('AWS')
+conf.set('AWS', 'aws_access_key', '')
+conf.set('AWS', 'aws_secret_key', '')
+conf.set('AWS', 'region', 'us-east-1')
+
+conf.add_section('NETSCALER')
+conf.set('NETSCALER', 'ns_host', '')
+conf.set('NETSCALER', 'ns_user', '')
+conf.set('NETSCALER', 'ns_pass', '')
+conf.set('NETSCALER', 'active_profile', '')
+
+conf.add_section('WEBSERVERS')
+conf.set('WEBSERVERS', 'web1_id', '')
+conf.set('WEBSERVERS', 'web1_ip', '')
+conf.set('WEBSERVERS', 'web2_id', '')
+conf.set('WEBSERVERS', 'web2_ip', '')
 
 # read in config if it exists
 if os.path.exists("./server.conf"):
@@ -36,16 +50,12 @@ if os.path.exists("./server.conf"):
 
 # load the config options into variables
 server_host = conf.get('DEFAULT', 'server_host')
-server_port = int(conf.get('DEFAULT', 'server_port'))
-server_reloader = True if conf.get('DEFAULT', 'server_reloader').lower().strip() == "true" else False
-server_debug = True if conf.get('DEFAULT', 'server_debug').lower().strip() == "true" else False
+server_port = conf.getint('DEFAULT', 'server_port')
+server_reloader = conf.getboolean('DEFAULT', 'server_reloader')
+server_debug = conf.getboolean('DEFAULT', 'server_debug')
 
-aws_access_key = conf.get('DEFAULT', 'aws_access_key')
-aws_secret_key = conf.get('DEFAULT', 'aws_secret_key')
-
-ns_host = conf.get('DEFAULT', 'ns_host')
-ns_user = conf.get('DEFAULT', 'ns_user')
-ns_pass = conf.get('DEFAULT', 'ns_pass')
+aws_access_key = conf.get('AWS', 'aws_access_key')
+aws_secret_key = conf.get('AWS', 'aws_secret_key')
 
 # add server logging via the rocket server
 log = logging.getLogger('Rocket')
@@ -61,7 +71,45 @@ log.addHandler(logging.handlers.RotatingFileHandler('server.log', maxBytes=51200
 @bottle.view('index')
 def index():
 	# check config and see if i need to setup anything on first run...
-	return dict()
+	if not conf.getboolean('DEFAULT', 'configured'):
+		configure_environment()  # do the actual configuration...
+
+	# configure the active profile on page load...
+	profile = conf.get('NETSCALER', 'active_profile')
+	with NitroAPI(host=conf.get('NETSCALER', 'ns_host'), username=conf.get('NETSCALER', 'ns_user'), password=conf.get('NETSCALER', 'ns_pass'), logging=False) as api:
+		# try and blow away all the potential configs
+		try:
+			api.request('/config/application?args=appname:profile_1', method='DELETE')
+			api.request('/config/application?args=appname:profile_2', method='DELETE')
+			api.request('/config/application?args=appname:profile_3', method='DELETE')
+		except:
+			pass
+
+		# configure the active profile
+		payload = {
+			'sessionid':api.session,
+			'onerror':'rollback',
+			'application': {
+				'appname':profile,
+				'apptemplatefilename':profile+'.xml',
+				'deploymentfilename':'profile_1_deployment.xml'
+			}
+		}
+		update_config = api.request('/config/application?action=import', payload)
+
+
+	return dict({
+		'webservers':[
+			{'name':'Web1', 'id':conf.get('WEBSERVERS', 'web1_id')},
+			{'name':'Web2', 'id':conf.get('WEBSERVERS', 'web2_id')}
+		]
+	})
+
+
+# config error page
+@bottle.route('/config_error')
+def config_error():
+	return "Error configuring the environment..."
 
 
 @bottle.route('/apply_netscaler_profile')
@@ -70,8 +118,33 @@ def apply_netscaler_profile():
 	profile = None
 	if bottle.request.query.profile:
 		profile = bottle.request.query.profile
+		active_profile = conf.get('NETSCALER', 'active_profile')
 
-	time.sleep(1)
+		with NitroAPI(host=conf.get('NETSCALER', 'ns_host'), username=conf.get('NETSCALER', 'ns_user'), password=conf.get('NETSCALER', 'ns_pass'), logging=False) as api:
+			# try and blow away all the potential configs
+			try:
+				api.request('/config/application?args=appname:'+active_profile, method='DELETE')
+			except:
+				pass
+
+			# configure the active profile
+			payload = {
+				'sessionid':api.session,
+				'onerror':'rollback',
+				'application': {
+					'appname':profile,
+					'apptemplatefilename':profile+'.xml',
+					'deploymentfilename':'profile_1_deployment.xml'
+				}
+			}
+			update_config = api.request('/config/application?action=import', payload)
+			if update_config != None and 'headers' in update_config:
+				# success, so update the active profile
+				conf.set('NETSCALER', 'active_profile', profile)
+			else:
+				# failed, so let the client know which profile is active
+				profile = active_profile
+
 	return dict({
 		"result":profile
 	})
@@ -81,9 +154,9 @@ def apply_netscaler_profile():
 @bottle.view('netscaler_redirect')
 def netscaler_redirect():
 	return dict({
-		'ns_host':ns_host,
-		'ns_user':ns_user,
-		'ns_pass':ns_pass
+		'ns_host':conf.get('NETSCALER', 'ns_host'),
+		'ns_user':conf.get('NETSCALER', 'ns_user'),
+		'ns_pass':conf.get('NETSCALER', 'ns_pass')
 	})
 
 
@@ -220,9 +293,8 @@ def get_cloudwatch_data(cloudviz_query, request_id, aws_access_key_id=None, aws_
 		if args['period'] < CW_MIN_PERIOD: 
 			args['period'] = CW_MIN_PERIOD
 
-		# Defaulting AWS region to us-east-1
-		if not 'region' in args: 
-			args['region'] = 'us-east-1'
+		# If region is not passed, use the configured region
+		args['region'] = conf.get('AWS', 'region')
 
 		# Use AWS keys if provided otherwise try to let boto figure it out.
 		if aws_access_key_id and aws_secret_access_key:
@@ -276,6 +348,48 @@ def get_cloudwatch_data(cloudviz_query, request_id, aws_access_key_id=None, aws_
 	results = data_table.ToJSonResponse(columns_order=columns, order_by="Timestamp", req_id=request_id)
 	return results
 
+
+def configure_environment():
+	import os
+	dashboard_instance_id = 'i-c7c90cbe' #'i-f361b7c4' # None
+	#try:
+	#	with os.popen("ec2-metadata") as f:
+	#		for line in f:
+	#			if line.startswith("instance-id:"):
+	#				dashboard_instance_id = line.split(" ")[1].strip()
+	#				break
+	#except: pass
+
+	if dashboard_instance_id and aws_access_key and aws_secret_key:
+		conn = boto.ec2.connect_to_region(conf.get('AWS', 'region'), aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
+		dashboard_instance = conn.get_only_instances([dashboard_instance_id])
+		conf.set('DEFAULT', 'vpc_id', dashboard_instance[0].vpc_id)
+		all_instances = conn.get_only_instances(filters={'vpc_id':dashboard_instance[0].vpc_id})
+		webservers = ['web1', 'web2']
+		for instance in all_instances:
+			if instance.id == dashboard_instance_id:
+				continue # we don't need to get any details for the dashboard instance.
+
+			if instance.platform == 'windows': # its the NETSCALER
+				conf.set('NETSCALER', 'instance_id', instance.id)
+				conf.set('NETSCALER', 'eip', instance.ip_address)
+				conf.set('NETSCALER', 'nsid', instance.private_ip_address)
+				ns_ips = ['mip', 'vip']
+				for ip_instance in instance.interfaces[0].private_ip_addresses:
+					if ip_instance.private_ip_address != instance.private_ip_address:
+						conf.set('NETSCALER', ns_ips.pop(0), ip_instance.private_ip_address)
+			else:
+				webserver = webservers.pop(0)
+				conf.set('WEBSERVERS', webserver+'_id', instance.id)
+				conf.set('WEBSERVERS', webserver+'_ip', instance.private_ip_address)
+
+		#print conf.items('NETSCALER')
+		#print conf.items('WEBSERVERS')
+		#conf.set('DEFAULT', 'configured', 'true')
+		log.info("Configured: "+str(conf.getboolean('DEFAULT', 'configured')))
+	else:
+		log.info("Failed to find the instance id, can't auto configure environment...")
+		bottle.redirect("/config_error")
 
 
 print "Reloader On: "+str(server_reloader)

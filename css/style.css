@@ -120,8 +120,9 @@ body {
 }
 
 
-#mem_utilization,
-#network_out {
+.mem_utilization,
+.network_in,
+.network_out {
 	margin-top:20px;
 }
 
@@ -187,4 +188,16 @@ body {
 .netscaler-profiles .profile-apply button.loading {
 	margin-right:10px;
 	margin-top:-1px;
+}
+
+.notify {
+	text-align:center;
+	font-size:110%;
+	margin-top:10px;
+}
+.error {
+	color:#AC1D00;
+}
+.success {
+	color:#3BB54B;
 }

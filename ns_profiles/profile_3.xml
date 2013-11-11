@@ -1,17 +1,45 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<template>
+<?xml version="1.0" encoding="UTF-8"?><template>
   <template_info>
-    <application_name>profile_1</application_name>
-    <templateversion_major></templateversion_major>
-    <templateversion_minor></templateversion_minor>
-    <author></author>
-    <introduction></introduction>
-    <summary></summary>
+    <application_name>profile_3</application_name>
+    <templateversion_major/>
+    <templateversion_minor/>
+    <author/>
+    <introduction/>
+    <summary/>
     <version_major>10</version_major>
     <version_minor>1</version_minor>
     <build_number>119.7</build_number>
   </template_info>
   <apptemplate>
+    <policy>
+      <policypatset_list>
+        <policypatset>
+          <name>image_pattern</name>
+          <policypatset_pattern_binding_list>
+            <policypatset_pattern_binding>
+              <name>image_pattern</name>
+              <string>.png</string>
+              <index>1</index>
+            </policypatset_pattern_binding>
+            <policypatset_pattern_binding>
+              <name>image_pattern</name>
+              <string>.jpg</string>
+              <index>2</index>
+            </policypatset_pattern_binding>
+            <policypatset_pattern_binding>
+              <name>image_pattern</name>
+              <string>.gif</string>
+              <index>3</index>
+            </policypatset_pattern_binding>
+            <policypatset_pattern_binding>
+              <name>image_pattern</name>
+              <string>.jpeg</string>
+              <index>4</index>
+            </policypatset_pattern_binding>
+          </policypatset_pattern_binding_list>
+        </policypatset>
+      </policypatset_list>
+    </policy>
     <appunit_list>
       <appunit>
         <name>default</name>
@@ -36,7 +64,6 @@
         <clttimeout>180</clttimeout>
         <somethod>NONE</somethod>
         <sopersistence>DISABLED</sopersistence>
-        <sopersistencetimeout>2</sopersistencetimeout>
         <healththreshold>0</healththreshold>
         <redirectportrewrite>DISABLED</redirectportrewrite>
         <downstateflush>DISABLED</downstateflush>
@@ -61,8 +88,8 @@
         <macmoderetainvlan>DISABLED</macmoderetainvlan>
       </appunit>
       <appunit>
-        <name>Rule</name>
-        <rule>TRUE</rule>
+        <name>Image_Rule</name>
+        <rule>HTTP.REQ.URL.ENDSWITH_ANY("image_pattern")</rule>
         <expressiontype>PI</expressiontype>
         <servicetype>HTTP</servicetype>
         <ipv46>0.0.0.0</ipv46>
@@ -85,7 +112,54 @@
         <clttimeout>180</clttimeout>
         <somethod>NONE</somethod>
         <sopersistence>DISABLED</sopersistence>
-        <sopersistencetimeout>2</sopersistencetimeout>
+        <healththreshold>0</healththreshold>
+        <redirectportrewrite>DISABLED</redirectportrewrite>
+        <downstateflush>DISABLED</downstateflush>
+        <consolidatedlconn>GLOBAL</consolidatedlconn>
+        <gt2gb>DISABLED</gt2gb>
+        <ipmapping>0.0.0.0</ipmapping>
+        <disableprimaryondown>DISABLED</disableprimaryondown>
+        <insertvserveripport>OFF</insertvserveripport>
+        <authentication>OFF</authentication>
+        <authn401>OFF</authn401>
+        <push>DISABLED</push>
+        <pushlabel>none</pushlabel>
+        <pushmulticlients>NO</pushmulticlients>
+        <l2conn>OFF</l2conn>
+        <appflowlog>DISABLED</appflowlog>
+        <icmpvsrresponse>PASSIVE</icmpvsrresponse>
+        <newservicerequestunit>PER_SECOND</newservicerequestunit>
+        <minautoscalemembers>0</minautoscalemembers>
+        <maxautoscalemembers>0</maxautoscalemembers>
+        <skippersistency>None</skippersistency>
+        <td>0</td>
+        <macmoderetainvlan>DISABLED</macmoderetainvlan>
+      </appunit>
+      <appunit>
+        <name>None_Image_Rule</name>
+        <rule>HTTP.REQ.URL.ENDSWITH_ANY("image_pattern").NOT</rule>
+        <expressiontype>PI</expressiontype>
+        <servicetype>HTTP</servicetype>
+        <ipv46>0.0.0.0</ipv46>
+        <port>0</port>
+        <range>1</range>
+        <persistencetype>NONE</persistencetype>
+        <timeout>2</timeout>
+        <persistencebackup>NONE</persistencebackup>
+        <backuppersistencetimeout>2</backuppersistencetimeout>
+        <lbmethod>LEASTCONNECTION</lbmethod>
+        <persistmask>255.255.255.255</persistmask>
+        <v6persistmasklen>128</v6persistmasklen>
+        <pq>OFF</pq>
+        <sc>OFF</sc>
+        <m>IP</m>
+        <sessionless>DISABLED</sessionless>
+        <state>ENABLED</state>
+        <connfailover>DISABLED</connfailover>
+        <cacheable>NO</cacheable>
+        <clttimeout>180</clttimeout>
+        <somethod>NONE</somethod>
+        <sopersistence>DISABLED</sopersistence>
         <healththreshold>0</healththreshold>
         <redirectportrewrite>DISABLED</redirectportrewrite>
         <downstateflush>DISABLED</downstateflush>

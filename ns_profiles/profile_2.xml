@@ -1,17 +1,25 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<template>
+<?xml version="1.0" encoding="UTF-8"?><template>
   <template_info>
-    <application_name>profile_1</application_name>
-    <templateversion_major></templateversion_major>
-    <templateversion_minor></templateversion_minor>
-    <author></author>
-    <introduction></introduction>
-    <summary></summary>
+    <application_name>profile_2</application_name>
+    <templateversion_major/>
+    <templateversion_minor/>
+    <author/>
+    <introduction/>
+    <summary/>
     <version_major>10</version_major>
     <version_minor>1</version_minor>
     <build_number>119.7</build_number>
   </template_info>
   <apptemplate>
+    <compression>
+      <cmppolicy_list>
+        <cmppolicy>
+          <name>compress</name>
+          <rule>true</rule>
+          <resaction>COMPRESS</resaction>
+        </cmppolicy>
+      </cmppolicy_list>
+    </compression>
     <appunit_list>
       <appunit>
         <name>default</name>
@@ -108,7 +116,24 @@
         <skippersistency>None</skippersistency>
         <td>0</td>
         <macmoderetainvlan>DISABLED</macmoderetainvlan>
+        <appunit_cmppolicy_binding_list>
+          <appunit_cmppolicy_binding>
+            <name>Rule</name>
+            <policyname>compress</policyname>
+            <priority>100</priority>
+            <gotopriorityexpression>END</gotopriorityexpression>
+            <bindpoint>RESPONSE</bindpoint>
+          </appunit_cmppolicy_binding>
+        </appunit_cmppolicy_binding_list>
       </appunit>
     </appunit_list>
+    <defaultentities>
+      <cmpaction_list>
+        <cmpaction>
+          <name>COMPRESS</name>
+          <cmptype>compress</cmptype>
+        </cmpaction>
+      </cmpaction_list>
+    </defaultentities>
   </apptemplate>
 </template>

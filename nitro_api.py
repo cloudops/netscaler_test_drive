@@ -39,7 +39,6 @@ class NitroAPI(object):
         system_stats = api.request('/stat/system')
     
     """
-    
     def __init__(self, protocol='http', host='127.0.0.1', uri='/nitro/v1', username=None, password=None, logging=True):        
         self.protocol = protocol
         self.host = host
