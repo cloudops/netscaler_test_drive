@@ -236,7 +236,10 @@
                 <div class="profile-apply"><button>Apply</button></div>
             </li>
           </ul>
-          <div class="control-footer">Go to the <a href="/netscaler_redirect">Netscaler Config</a></div>
+          <div class="control-footer">
+            Go to the <a href="/netscaler_redirect">Netscaler Config</a><br />
+            <span class="notice">(requires FireFox or Safari for Java Applet functionality)</span>
+          </div>
         </div>
         <div class="clear"> </div>
         <div class="section-footer">It will take a few minutes for the graphs to reflect config changes.</div>
@@ -252,7 +255,7 @@
           % else:
             <div class="right">
           % end
-            <b>{{webserver['name']}}</b>
+            <div class="webserver_name">{{webserver['name']}}</div>
             <div id="{{webserver['id'].replace('-','_')}}_cpu_utilization" class="cpu_utilization" style="width: 500px; height: 300px;"></div>
             <!--<div id="{{webserver['id'].replace('-','_')}}_mem_utilization" class="mem_utilization" style="width: 500px; height: 300px;"></div>-->
             <div id="{{webserver['id'].replace('-','_')}}_network_in" class="network_in" style="width: 500px; height: 300px;"></div>
