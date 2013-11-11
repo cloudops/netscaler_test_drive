@@ -102,7 +102,8 @@ def index():
 		'webservers':[
 			{'name':'Web1', 'id':conf.get('WEBSERVERS', 'web1_id')},
 			{'name':'Web2', 'id':conf.get('WEBSERVERS', 'web2_id')}
-		]
+		],
+		'profile':profile
 	})
 
 

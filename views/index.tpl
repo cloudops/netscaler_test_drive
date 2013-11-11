@@ -160,6 +160,11 @@
       setInterval('drawVisualizations()', 60000);
 
       $(function() {
+        // set the initial profile.
+        var initial_profile = '{{profile}}';
+        $('.netscaler-profiles #'+initial_profile).addClass('active');
+        $('.netscaler-profiles #'+initial_profile+' .profile-apply button').attr('disabled','disabled').text('Active');
+
         // handle clicks of the 'apply' button for the profiles.
         $('.netscaler-profiles .profile-apply button').on('click', function() {
           var clicked_li = $(this).closest('li.profile');
@@ -215,10 +220,10 @@
           </div>
           <div class="notify" style="display:none;"></div>
           <ul class="netscaler-profiles">
-            <li id="profile_1" class="profile active">
+            <li id="profile_1" class="profile">
                 <div class="profile-name">Load Balancing</div>
                 <div class="profile-desc">Basic load balancing - a virtual server bound to a set of backend servers with default health monitors and a simple LB metric, like least connections</div>
-                <div class="profile-apply"><button disabled>Active</button></div
+                <div class="profile-apply"><button>Apply</button></div
             </li>
             <li id="profile_2" class="profile">
                 <div class="profile-name">Acceleration &amp; Optimization</div>
