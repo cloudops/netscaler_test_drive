@@ -1,26 +1,30 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<template_deployment>
+<?xml version="1.0" encoding="UTF-8"?><template_deployment>
   <template_info>
     <application_name>profile_deployment</application_name>
-    <templateversion_major></templateversion_major>
-    <templateversion_minor></templateversion_minor>
-    <author></author>
-    <introduction></introduction>
-    <summary></summary>
+    <templateversion_major/>
+    <templateversion_minor/>
+    <author/>
+    <introduction/>
+    <summary/>
     <version_major>10</version_major>
     <version_minor>1</version_minor>
-    <build_number>119.7</build_number>
+    <build_number>120.13</build_number>
   </template_info>
   <appendpoint_list>
     <appendpoint>
-      <ipv46>172.31.35.54</ipv46>
+      <ipv46>10.0.0.248</ipv46>
       <port>80</port>
       <servicetype>HTTP</servicetype>
     </appendpoint>
   </appendpoint_list>
   <service_list>
     <service>
-      <ip>172.31.33.115</ip>
+      <ip>10.0.0.198</ip>
+      <port>80</port>
+      <servicetype>HTTP</servicetype>
+    </service>
+    <service>
+      <ip>10.0.0.199</ip>
       <port>80</port>
       <servicetype>HTTP</servicetype>
     </service>
