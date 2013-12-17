@@ -88,7 +88,7 @@
         var {{webserver['id'].replace('-','_')}}_cpu_query = new google.visualization.Query('http://'+window.location.host+'/get_data?qs='+JSON.stringify({{webserver['id'].replace('-','_')}}_cpu_qa));
         {{webserver['id'].replace('-','_')}}_cpu_query.send(function(response) {
           if (response.isError()) {
-            alert('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+            console.log('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
             return;
           }
       
@@ -105,7 +105,7 @@
         /*var {{webserver['id'].replace('-','_')}}_mem_query = new google.visualization.Query('http://'+window.location.host+'/get_data?qs='+JSON.stringify({{webserver['id'].replace('-','_')}}_mem_qa));
         {{webserver['id'].replace('-','_')}}_mem_query.send(function(response) {
           if (response.isError()) {
-            alert('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+            console.log('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
             return;
           }
         
@@ -122,7 +122,7 @@
         var {{webserver['id'].replace('-','_')}}_network_in_query = new google.visualization.Query('http://'+window.location.host+'/get_data?qs='+JSON.stringify({{webserver['id'].replace('-','_')}}_network_in_qa));
         {{webserver['id'].replace('-','_')}}_network_in_query.send(function(response) {
           if (response.isError()) {
-            alert('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+            console.log('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
             return;
           }
       
@@ -139,7 +139,7 @@
         var {{webserver['id'].replace('-','_')}}_network_out_query = new google.visualization.Query('http://'+window.location.host+'/get_data?qs='+JSON.stringify({{webserver['id'].replace('-','_')}}_network_out_qa));
         {{webserver['id'].replace('-','_')}}_network_out_query.send(function(response) {
           if (response.isError()) {
-            alert('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
+            console.log('CloudWatch query: ' + response.getMessage() + ' ' + response.getDetailedMessage());
             return;
           }
       

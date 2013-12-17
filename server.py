@@ -12,6 +12,7 @@ import logging.handlers
 from nitro_api import NitroAPI
 import operator
 import os
+import pprint
 import time
 import json
 import requests
@@ -73,6 +74,9 @@ def index():
 	# check config and see if i need to setup anything on first run...
 	if not conf.getboolean('DEFAULT', 'configured'):
 		configure_environment()  # do the actual configuration...
+		print conf.items('NETSCALER')
+		print conf.items('WEBSERVERS')
+		conf.set('DEFAULT', 'configured', 'true')
 
 	# configure the active profile on page load...
 	profile = conf.get('NETSCALER', 'active_profile')
@@ -95,8 +99,15 @@ def index():
 				'deploymentfilename':'profile_1_deployment.xml'
 			}
 		}
-		update_config = api.request('/config/application?action=import', payload)
+		api.request('/config/application?action=import', payload)
 
+		# save the config
+		payload = {
+			'sessionid':api.session,
+			'onerror':'rollback',
+			'nsconfig': {}
+		}
+		api.request('/config/nsconfig?action=save', payload)
 
 	return dict({
 		'webservers':[
@@ -115,14 +126,13 @@ def config_error():
 
 @bottle.route('/apply_netscaler_profile')
 def apply_netscaler_profile():
-	#api = NitroAPI(host=host, username=username, password=password)
 	profile = None
 	if bottle.request.query.profile:
 		profile = bottle.request.query.profile
 		active_profile = conf.get('NETSCALER', 'active_profile')
 
 		with NitroAPI(host=conf.get('NETSCALER', 'ns_host'), username=conf.get('NETSCALER', 'ns_user'), password=conf.get('NETSCALER', 'ns_pass'), logging=server_debug) as api:
-			# try and blow away all the potential configs
+			# remove the current template so we can update the active profile
 			try:
 				api.request('/config/application?args=appname:'+active_profile, method='DELETE')
 			except:
@@ -142,13 +152,48 @@ def apply_netscaler_profile():
 			if update_config != None and 'headers' in update_config:
 				# success, so update the active profile
 				conf.set('NETSCALER', 'active_profile', profile)
+				if profile == 'profile_3':
+					fix_profile_3(api)
 			else:
 				# failed, so let the client know which profile is active
 				profile = active_profile
 
+			# save the config
+			payload = {
+				'sessionid':api.session,
+				'onerror':'rollback',
+				'nsconfig': {}
+			}
+			api.request('/config/nsconfig?action=save', payload)
+
 	return dict({
 		"result":profile
 	})
+
+
+# content switching is not supported by default when exporting and importing templates
+# by default each rule will load balance across all servers
+# here we change the rules to only point to their respective server
+def fix_profile_3(api):
+	lb_servers = api.request('/config/lbvserver')
+	rule_names = []
+	if 'lbvserver' in lb_servers:
+		for lbvs in lb_servers['lbvserver']:
+			if lbvs['name'].startswith('app_u_profile_3'):
+				rule_names.append(lbvs['name'])
+
+	if len(rule_names) > 0:
+		lb_bindings = []
+		for rule in rule_names:
+			rule_binding = api.request('/config/lbvserver_service_binding/'+rule)
+			if 'lbvserver_service_binding' in rule_binding:
+				for rb in rule_binding['lbvserver_service_binding']:
+					if rb['servicename'] not in lb_bindings:
+						lb_bindings.append(rb['servicename'])
+
+		if len(lb_bindings) > 0:
+			for rule in rule_names:
+				api.request('/config/lbvserver_service_binding/'+rule+'?args=servicename:'+lb_bindings.pop(0), method="DELETE")
 
 
 @bottle.route('/netscaler_redirect')
@@ -352,14 +397,14 @@ def get_cloudwatch_data(cloudviz_query, request_id, aws_access_key_id=None, aws_
 
 def configure_environment():
 	import os
-	dashboard_instance_id = 'i-c7c90cbe' #'i-f361b7c4' # None
-	#try:
-	#	with os.popen("ec2-metadata") as f:
-	#		for line in f:
-	#			if line.startswith("instance-id:"):
-	#				dashboard_instance_id = line.split(" ")[1].strip()
-	#				break
-	#except: pass
+	#dashboard_instance_id = 'i-c7c90cbe' #'i-f361b7c4' # None
+	try:
+		with os.popen("ec2-metadata") as f:
+			for line in f:
+				if line.startswith("instance-id:"):
+					dashboard_instance_id = line.split(" ")[1].strip()
+					break
+	except: pass
 
 	if dashboard_instance_id and aws_access_key and aws_secret_key:
 		conn = boto.ec2.connect_to_region(conf.get('AWS', 'region'), aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
@@ -383,10 +428,6 @@ def configure_environment():
 				webserver = webservers.pop(0)
 				conf.set('WEBSERVERS', webserver+'_id', instance.id)
 				conf.set('WEBSERVERS', webserver+'_ip', instance.private_ip_address)
-
-		#print conf.items('NETSCALER')
-		#print conf.items('WEBSERVERS')
-		#conf.set('DEFAULT', 'configured', 'true')
 		log.info("Configured: "+str(conf.getboolean('DEFAULT', 'configured')))
 	else:
 		log.info("Failed to find the instance id, can't auto configure environment...")
