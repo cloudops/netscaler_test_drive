@@ -64,6 +64,7 @@ if server_debug:
 	log.setLevel(logging.DEBUG)
 else:
 	log.setLevel(logging.INFO)
+logging.basicConfig(format='%(asctime)s %(message)s')
 log.addHandler(logging.handlers.RotatingFileHandler('server.log', maxBytes=51200, backupCount=1))
 
 
