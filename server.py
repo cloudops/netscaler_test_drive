@@ -83,6 +83,9 @@ def index():
 		pprint.pprint(conf._sections)  # this is the resulting config after discovery
 		print ""
 
+		log.info("\nSERVER CONFIG:\n--------------")
+		log.info(pprint.pformat(conf._sections))
+
 		# update build the deployment file based on the discovered config.
 		if conf.get('NETSCALER', 'vip') and conf.get('WEBSERVERS', 'web1_ip') != '' and conf.get('WEBSERVERS', 'web2_ip') != '':
 			with open("ns_profiles/profile_deployment.xml", "wt") as fout:
