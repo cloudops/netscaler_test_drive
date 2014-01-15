@@ -36,9 +36,9 @@ conf.set('AWS', 'region', 'us-east-1')
 
 conf.add_section('NETSCALER')
 conf.set('NETSCALER', 'host', '')
-conf.set('NETSCALER', 'user', '')
-conf.set('NETSCALER', 'pass', '')
-conf.set('NETSCALER', 'active_profile', '')
+conf.set('NETSCALER', 'user', 'nsroot')
+conf.set('NETSCALER', 'pass', 'nsroot')
+conf.set('NETSCALER', 'active_profile', 'profile_1')
 
 conf.add_section('WEBSERVERS')
 conf.set('WEBSERVERS', 'web1_id', '')
