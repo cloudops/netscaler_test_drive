@@ -451,7 +451,7 @@ def discover_environment():
 		import os
 		dashboard_instance_id = None # 'i-06abc632'
 		try:
-			with os.popen("ec2-metadata") as f:
+			with os.popen("/opt/aws/bin/ec2-metadata") as f:
 				for line in f:
 					if line.startswith("instance-id:"):
 						dashboard_instance_id = line.split(" ")[1].strip()
