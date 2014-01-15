@@ -13,19 +13,19 @@
   </template_info>
   <appendpoint_list>
     <appendpoint>
-      <ipv46>172.31.44.226</ipv46>
+      <ipv46>{{netscaler_vip}}</ipv46>
       <port>80</port>
       <servicetype>HTTP</servicetype>
     </appendpoint>
   </appendpoint_list>
   <service_list>
     <service>
-      <ip>172.31.1.66</ip>
+      <ip>{{webserver_1_ip}}</ip>
       <port>80</port>
       <servicetype>HTTP</servicetype>
     </service>
     <service>
-      <ip>172.31.12.188</ip>
+      <ip>{{webserver_2_ip}}</ip>
       <port>80</port>
       <servicetype>HTTP</servicetype>
     </service>

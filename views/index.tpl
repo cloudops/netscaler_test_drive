@@ -24,6 +24,7 @@
         },1000);
 
         % for webserver in webservers:
+        % if webserver['id'] != '':
         var {{webserver['id'].replace('-','_')}}_cpu_qa = {  
           "namespace": "AWS/EC2",       // CloudWatch namespace (string)
           "metric": "CPUUtilization",   // CloudWatch metric (string)
@@ -154,6 +155,7 @@
         });
 
         % end
+        % end
       }
       
       google.setOnLoadCallback(drawVisualizations);
@@ -230,11 +232,11 @@
                 <div class="profile-desc">Optimize the load balanced traffic with caching and compression</div>
                 <div class="profile-apply"><button>Apply</button></div>
             </li>
-            <li id="profile_3" class="profile">
+            <!--<li id="profile_3" class="profile">
                 <div class="profile-name">Switching</div>
                 <div class="profile-desc">Utilize L7 content switching to serve different workloads from each web server</div>
                 <div class="profile-apply"><button>Apply</button></div>
-            </li>
+            </li>-->
           </ul>
           <div class="control-footer">
             Go to the <a href="/netscaler_redirect">Netscaler Config</a><br />
@@ -242,7 +244,10 @@
           </div>
         </div>
         <div class="clear"> </div>
-        <div class="section-footer">It will take a few minutes for the graphs to reflect config changes.</div>
+        <div class="section-footer">
+          It takes 10-15 minutes for the graphs to show the monitoring data and the latest data will always be ~10 minutes old.<br />
+          This means that it will take ~10 minutes for the graphs to reflect any config changes.
+        </div>
       </div>
       
 

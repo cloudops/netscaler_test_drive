@@ -1,7 +1,7 @@
 SSH
 ---
 ssh -i ~/.ssh/swill_ec2.pem ec2-user@ec2-54-213-97-239.us-west-2.compute.amazonaws.com
-ssh -i ~/.ssh/swill_ec2.pem ec2-user@54.200.81.235
+ssh -i ~/.ssh/swill_ec2.pem ec2-user@54.200.202.196
 
 through ns: http://54.200.21.62/
 
@@ -15,6 +15,7 @@ $ yum install git (if you will be pulling the repo)
 $ yum install python-pip
 $ pip install boto
 $ pip install bottle
+$ pip install paramiko
 $ pip install requests
 $ pip install rocket
 

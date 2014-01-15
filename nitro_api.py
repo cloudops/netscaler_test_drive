@@ -128,7 +128,6 @@ class NitroAPI(object):
                             result = {'result': response.text}
                 else:
                     self.errors.append(response.text)
-                    print self.errors
 
             if payload and 'logout' in payload:
                 self.end_session()

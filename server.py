@@ -12,6 +12,7 @@ import logging.handlers
 from nitro_api import NitroAPI
 import operator
 import os
+import paramiko
 import pprint
 import time
 import json
@@ -21,7 +22,7 @@ import requests
 # setup the conf object and set default values...
 conf = ConfigParser()
 
-conf.set('DEFAULT', 'configured', 'True')
+conf.set('DEFAULT', 'discovered', 'False')
 
 conf.set('DEFAULT', 'server_host', '0.0.0.0')
 conf.set('DEFAULT', 'server_port', '80')
@@ -34,9 +35,9 @@ conf.set('AWS', 'aws_secret_key', '')
 conf.set('AWS', 'region', 'us-east-1')
 
 conf.add_section('NETSCALER')
-conf.set('NETSCALER', 'ns_host', '')
-conf.set('NETSCALER', 'ns_user', '')
-conf.set('NETSCALER', 'ns_pass', '')
+conf.set('NETSCALER', 'host', '')
+conf.set('NETSCALER', 'user', '')
+conf.set('NETSCALER', 'pass', '')
 conf.set('NETSCALER', 'active_profile', '')
 
 conf.add_section('WEBSERVERS')
@@ -64,8 +65,9 @@ if server_debug:
 	log.setLevel(logging.DEBUG)
 else:
 	log.setLevel(logging.INFO)
-logging.basicConfig(format='%(asctime)s %(message)s')
-log.addHandler(logging.handlers.RotatingFileHandler('server.log', maxBytes=51200, backupCount=1))
+log_handler = logging.handlers.RotatingFileHandler('server.log', maxBytes=51200, backupCount=1)
+log_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+log.addHandler(log_handler)
 
 
 # the index page
@@ -73,20 +75,66 @@ log.addHandler(logging.handlers.RotatingFileHandler('server.log', maxBytes=51200
 @bottle.view('index')
 def index():
 	# check config and see if i need to setup anything on first run...
-	if not conf.getboolean('DEFAULT', 'configured'):
-		configure_environment()  # do the actual configuration...
-		print conf.items('NETSCALER')
-		print conf.items('WEBSERVERS')
-		conf.set('DEFAULT', 'configured', 'true')
+	if not conf.getboolean('DEFAULT', 'discovered'):
+		discover_environment()  # go and find the details of the environment and load it into conf...
+
+		print "\nSERVER CONFIG:"
+		print "--------------"
+		pprint.pprint(conf._sections)  # this is the resulting config after discovery
+		print ""
+
+		# update build the deployment file based on the discovered config.
+		if conf.get('NETSCALER', 'vip') and conf.get('WEBSERVERS', 'web1_ip') != '' and conf.get('WEBSERVERS', 'web2_ip') != '':
+			with open("ns_profiles/profile_deployment.xml", "wt") as fout:
+				with open("ns_profiles/profile_deployment.xml.tpl", "rt") as fin:
+					for line in fin:
+						fout.write(line.replace('{{netscaler_vip}}', conf.get('NETSCALER', 'vip')).replace('{{webserver_1_ip}}', conf.get('WEBSERVERS', 'web1_ip')).replace('{{webserver_2_ip}}', conf.get('WEBSERVERS', 'web2_ip')))
+			ssh = ssh_client(conf.get('NETSCALER', 'host'), 22, conf.get('NETSCALER', 'user'), conf.get('NETSCALER', 'pass'))
+			
+			# fix the file permissions (as per a bug on the NS; Dec 2013)
+			stdin1, stdout1, stderr1 = ssh.exec_command('shell "chmod ugo+w /nsconfig/nstemplates/applications"')
+			stdin2, stdout2, stderr2 = ssh.exec_command('shell "chmod ugo+w /nsconfig/nstemplates/applications/deployment_files"')
+			stdin3, stdout3, stderr3 = ssh.exec_command('shell "chmod go+x /flash/nsconfig"')
+
+			## debugging example
+			#print stdout1.readlines()
+			#print stderr1.readlines()
+
+			sftp = ssh.open_sftp()
+			sftp.put('ns_profiles/profile_1.xml', '/nsconfig/nstemplates/applications/profile_1.xml')
+			sftp.put('ns_profiles/profile_2.xml', '/nsconfig/nstemplates/applications/profile_2.xml')
+			#sftp.put('ns_profiles/profile_3.xml', '/nsconfig/nstemplates/applications/profile_3.xml')
+			sftp.put('ns_profiles/profile_deployment.xml', '/nsconfig/nstemplates/applications/deployment_files/profile_deployment.xml')
+
+			sftp.close()
+			ssh.close()
+			
+			with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=server_debug) as api:
+				# setup the IP addresses for the VIP and the MIP
+				if conf.get('NETSCALER', 'mip') and conf.get('NETSCALER', 'vip'):
+					for ip_type in ['mip', 'vip']:
+						payload = {
+							'sessionid':api.session,
+							'onerror':'rollback',
+							'nsip': {
+								'ipaddress':conf.get('NETSCALER', ip_type),
+								'netmask':'255.255.0.0',
+								'type':ip_type.upper()
+							}
+						}
+						api.request('/config/nsip', payload)
+		else:
+			log.info("The Netscaler VIP or the webserver IPs where not discovered.")
+			return "The environment did not come up correctly and could not be discovered.  Try again later..."
 
 	# configure the active profile on page load...
 	profile = conf.get('NETSCALER', 'active_profile')
-	with NitroAPI(host=conf.get('NETSCALER', 'ns_host'), username=conf.get('NETSCALER', 'ns_user'), password=conf.get('NETSCALER', 'ns_pass'), logging=server_debug) as api:
+	with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=server_debug) as api:
 		# try and blow away all the potential configs
 		try:
 			api.request('/config/application?args=appname:profile_1', method='DELETE')
 			api.request('/config/application?args=appname:profile_2', method='DELETE')
-			api.request('/config/application?args=appname:profile_3', method='DELETE')
+			#api.request('/config/application?args=appname:profile_3', method='DELETE')
 		except:
 			pass
 
@@ -97,7 +145,7 @@ def index():
 			'application': {
 				'appname':profile,
 				'apptemplatefilename':profile+'.xml',
-				'deploymentfilename':'profile_1_deployment.xml'
+				'deploymentfilename':'profile_deployment.xml'
 			}
 		}
 		api.request('/config/application?action=import', payload)
@@ -132,7 +180,7 @@ def apply_netscaler_profile():
 		profile = bottle.request.query.profile
 		active_profile = conf.get('NETSCALER', 'active_profile')
 
-		with NitroAPI(host=conf.get('NETSCALER', 'ns_host'), username=conf.get('NETSCALER', 'ns_user'), password=conf.get('NETSCALER', 'ns_pass'), logging=server_debug) as api:
+		with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=server_debug) as api:
 			# remove the current template so we can update the active profile
 			try:
 				api.request('/config/application?args=appname:'+active_profile, method='DELETE')
@@ -146,15 +194,15 @@ def apply_netscaler_profile():
 				'application': {
 					'appname':profile,
 					'apptemplatefilename':profile+'.xml',
-					'deploymentfilename':'profile_1_deployment.xml'
+					'deploymentfilename':'profile_deployment.xml'
 				}
 			}
 			update_config = api.request('/config/application?action=import', payload)
 			if update_config != None and 'headers' in update_config:
 				# success, so update the active profile
 				conf.set('NETSCALER', 'active_profile', profile)
-				if profile == 'profile_3':
-					fix_profile_3(api)
+				#if profile == 'profile_3':
+				#	fix_profile_3(api)
 			else:
 				# failed, so let the client know which profile is active
 				profile = active_profile
@@ -172,40 +220,39 @@ def apply_netscaler_profile():
 	})
 
 
-# content switching is not supported by default when exporting and importing templates
-# by default each rule will load balance across all servers
-# here we change the rules to only point to their respective server
-def fix_profile_3(api):
-	lb_servers = api.request('/config/lbvserver')
-	rule_names = []
-	if 'lbvserver' in lb_servers:
-		for lbvs in lb_servers['lbvserver']:
-			if lbvs['name'].startswith('app_u_profile_3'):
-				rule_names.append(lbvs['name'])
-
-	if len(rule_names) > 0:
-		lb_bindings = []
-		for rule in rule_names:
-			rule_binding = api.request('/config/lbvserver_service_binding/'+rule)
-			if 'lbvserver_service_binding' in rule_binding:
-				for rb in rule_binding['lbvserver_service_binding']:
-					if rb['servicename'] not in lb_bindings:
-						lb_bindings.append(rb['servicename'])
-
-		if len(lb_bindings) > 0:
-			for rule in rule_names:
-				api.request('/config/lbvserver_service_binding/'+rule+'?args=servicename:'+lb_bindings.pop(0), method="DELETE")
+## content switching is not supported by default when exporting and importing templates
+## by default each rule will load balance across all servers
+## here we change the rules to only point to their respective server
+#def fix_profile_3(api):
+#	lb_servers = api.request('/config/lbvserver')
+#	rule_names = []
+#	if 'lbvserver' in lb_servers:
+#		for lbvs in lb_servers['lbvserver']:
+#			if lbvs['name'].startswith('app_u_profile_3'):
+#				rule_names.append(lbvs['name'])
+#
+#	if len(rule_names) > 0:
+#		lb_bindings = []
+#		for rule in rule_names:
+#			rule_binding = api.request('/config/lbvserver_service_binding/'+rule)
+#			if 'lbvserver_service_binding' in rule_binding:
+#				for rb in rule_binding['lbvserver_service_binding']:
+#					if rb['servicename'] not in lb_bindings:
+#						lb_bindings.append(rb['servicename'])
+#
+#		if len(lb_bindings) > 0:
+#			for rule in rule_names:
+#				api.request('/config/lbvserver_service_binding/'+rule+'?args=servicename:'+lb_bindings.pop(0), method="DELETE")
 
 
 @bottle.route('/netscaler_redirect')
 @bottle.view('netscaler_redirect')
 def netscaler_redirect():
 	return dict({
-		'ns_host':conf.get('NETSCALER', 'ns_host'),
-		'ns_user':conf.get('NETSCALER', 'ns_user'),
-		'ns_pass':conf.get('NETSCALER', 'ns_pass')
+		'ns_host':conf.get('NETSCALER', 'host'),
+		'ns_user':conf.get('NETSCALER', 'user'),
+		'ns_pass':conf.get('NETSCALER', 'pass')
 	})
-
 
 
 # get graphing data
@@ -396,9 +443,9 @@ def get_cloudwatch_data(cloudviz_query, request_id, aws_access_key_id=None, aws_
 	return results
 
 
-def configure_environment():
+def discover_environment():
 	import os
-	#dashboard_instance_id = 'i-c7c90cbe' #'i-f361b7c4' # None
+	dashboard_instance_id = None # 'i-06abc632'
 	try:
 		with os.popen("ec2-metadata") as f:
 			for line in f:
@@ -414,11 +461,12 @@ def configure_environment():
 		all_instances = conn.get_only_instances(filters={'vpc_id':dashboard_instance[0].vpc_id})
 		webservers = ['web1', 'web2']
 		for instance in all_instances:
-			if instance.id == dashboard_instance_id:
-				continue # we don't need to get any details for the dashboard instance.
+			if instance.id == dashboard_instance_id or instance.state != 'running':
+				continue # skip this instance...
 
-			if instance.platform == 'windows': # its the NETSCALER
+			if instance.platform == 'windows': # its the NETSCALER and its running
 				conf.set('NETSCALER', 'instance_id', instance.id)
+				conf.set('NETSCALER', 'host', instance.ip_address)
 				conf.set('NETSCALER', 'eip', instance.ip_address)
 				conf.set('NETSCALER', 'nsid', instance.private_ip_address)
 				ns_ips = ['mip', 'vip']
@@ -429,10 +477,19 @@ def configure_environment():
 				webserver = webservers.pop(0)
 				conf.set('WEBSERVERS', webserver+'_id', instance.id)
 				conf.set('WEBSERVERS', webserver+'_ip', instance.private_ip_address)
-		log.info("Configured: "+str(conf.getboolean('DEFAULT', 'configured')))
+		conf.set('DEFAULT', 'discovered', 'true')
+		log.info("Discovered: "+str(conf.getboolean('DEFAULT', 'discovered')))
 	else:
 		log.info("Failed to find the instance id, can't auto configure environment...")
 		bottle.redirect("/config_error")
+
+
+def ssh_client(server, port, user, password):
+    client = paramiko.SSHClient()
+    client.load_system_host_keys()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(server, port, user, password)
+    return client
 
 
 print "Reloader On: "+str(server_reloader)
