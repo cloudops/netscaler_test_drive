@@ -447,43 +447,47 @@ def get_cloudwatch_data(cloudviz_query, request_id, aws_access_key_id=None, aws_
 
 
 def discover_environment():
-	import os
-	dashboard_instance_id = None # 'i-06abc632'
-	try:
-		with os.popen("ec2-metadata") as f:
-			for line in f:
-				if line.startswith("instance-id:"):
-					dashboard_instance_id = line.split(" ")[1].strip()
-					break
-	except: pass
+	if aws_access_key and aws_secret_key:
+		import os
+		dashboard_instance_id = None # 'i-06abc632'
+		try:
+			with os.popen("ec2-metadata") as f:
+				for line in f:
+					if line.startswith("instance-id:"):
+						dashboard_instance_id = line.split(" ")[1].strip()
+						break
+		except: pass
 
-	if dashboard_instance_id and aws_access_key and aws_secret_key:
-		conn = boto.ec2.connect_to_region(conf.get('AWS', 'region'), aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
-		dashboard_instance = conn.get_only_instances([dashboard_instance_id])
-		conf.set('DEFAULT', 'vpc_id', dashboard_instance[0].vpc_id)
-		all_instances = conn.get_only_instances(filters={'vpc_id':dashboard_instance[0].vpc_id})
-		webservers = ['web1', 'web2']
-		for instance in all_instances:
-			if instance.id == dashboard_instance_id or instance.state != 'running':
-				continue # skip this instance...
+		if dashboard_instance_id:
+			conn = boto.ec2.connect_to_region(conf.get('AWS', 'region'), aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
+			dashboard_instance = conn.get_only_instances([dashboard_instance_id])
+			conf.set('DEFAULT', 'vpc_id', dashboard_instance[0].vpc_id)
+			all_instances = conn.get_only_instances(filters={'vpc_id':dashboard_instance[0].vpc_id})
+			webservers = ['web1', 'web2']
+			for instance in all_instances:
+				if instance.id == dashboard_instance_id or instance.state != 'running':
+					continue # skip this instance...
 
-			if instance.platform == 'windows': # its the NETSCALER and its running
-				conf.set('NETSCALER', 'instance_id', instance.id)
-				conf.set('NETSCALER', 'host', instance.ip_address)
-				conf.set('NETSCALER', 'eip', instance.ip_address)
-				conf.set('NETSCALER', 'nsid', instance.private_ip_address)
-				ns_ips = ['mip', 'vip']
-				for ip_instance in instance.interfaces[0].private_ip_addresses:
-					if ip_instance.private_ip_address != instance.private_ip_address:
-						conf.set('NETSCALER', ns_ips.pop(0), ip_instance.private_ip_address)
-			else:
-				webserver = webservers.pop(0)
-				conf.set('WEBSERVERS', webserver+'_id', instance.id)
-				conf.set('WEBSERVERS', webserver+'_ip', instance.private_ip_address)
-		conf.set('DEFAULT', 'discovered', 'true')
-		log.info("Discovered: "+str(conf.getboolean('DEFAULT', 'discovered')))
+				if instance.platform == 'windows': # its the NETSCALER and its running
+					conf.set('NETSCALER', 'instance_id', instance.id)
+					conf.set('NETSCALER', 'host', instance.ip_address)
+					conf.set('NETSCALER', 'eip', instance.ip_address)
+					conf.set('NETSCALER', 'nsid', instance.private_ip_address)
+					ns_ips = ['mip', 'vip']
+					for ip_instance in instance.interfaces[0].private_ip_addresses:
+						if ip_instance.private_ip_address != instance.private_ip_address:
+							conf.set('NETSCALER', ns_ips.pop(0), ip_instance.private_ip_address)
+				else:
+					webserver = webservers.pop(0)
+					conf.set('WEBSERVERS', webserver+'_id', instance.id)
+					conf.set('WEBSERVERS', webserver+'_ip', instance.private_ip_address)
+			conf.set('DEFAULT', 'discovered', 'true')
+			log.info("Discovered: "+str(conf.getboolean('DEFAULT', 'discovered')))
+		else:
+			log.info("Failed to find the instance id, can't auto configure environment...")
+			bottle.redirect("/config_error")
 	else:
-		log.info("Failed to find the instance id, can't auto configure environment...")
+		log.info("AWS credentials have not been configured correctly...")
 		bottle.redirect("/config_error")
 
 
