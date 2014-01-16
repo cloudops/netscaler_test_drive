@@ -133,7 +133,7 @@ def index():
 		else:
 			log.info("The Netscaler VIP or the webserver IPs where not discovered.")
 			conf.set('DEFAULT', 'discovered', 'false')
-			log.info("Resetting to 'undiscovered' because of a discovery error..."))
+			log.info("Resetting to 'undiscovered' because of a discovery error...")
 			bottle.redirect("/config_error")
 
 	# configure the active profile on page load...
