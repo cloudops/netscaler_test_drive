@@ -81,10 +81,10 @@ def index():
 	if not conf.getboolean('DEFAULT', 'discovered'):
 		discover_environment()  # go and find the details of the environment and load it into conf...
 		log.info(
-			"\nSERVER CONFIG:\n--------------\n"+
+			"\n\nSERVER CONFIG:\n--------------"+
 			"\nNETSCALER:\n"+pprint.pformat(conf._sections['NETSCALER'])+"\n"+
 			"\nLOADGENERATOR:\n"+pprint.pformat(conf._sections['LOADGENERATOR'])+"\n"+
-			"\nWEBSERVERS:\n"+pprint.pformat(conf._sections['WEBSERVERS']))
+			"\nWEBSERVERS:\n"+pprint.pformat(conf._sections['WEBSERVERS'])+"\n")
 
 		# update build the deployment file based on the discovered config.
 		if conf.get('NETSCALER', 'vip') and conf.get('WEBSERVERS', 'web1_ip') and conf.get('WEBSERVERS', 'web2_ip'):
@@ -177,7 +177,7 @@ def index():
 # config error page
 @bottle.route('/config_error')
 def config_error():
-	return "Error configuring the environment.  Please contact Citrix to resolve the issue..."
+	return '<b>Error configuring the environment...</b><br/><br /><a href="mailto:support@citrix.com?subject=NetScaler Test Drive Error">Please email Citrix</a> the contents of the <a href="/log">server log</a>...'
 
 
 @bottle.route('/apply_netscaler_profile')
