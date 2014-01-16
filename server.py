@@ -444,7 +444,7 @@ def get_cloudwatch_data(cloudviz_query, request_id, aws_access_key_id=None, aws_
 def discover_environment():
 	if conf.get('AWS', 'access_key') and conf.get('AWS', 'secret_key'):
 		import os
-		dashboard_instance_id = 'i-06abc632' #None # 
+		dashboard_instance_id = None # 'i-06abc632' #
 		try:
 			with os.popen("/opt/aws/bin/ec2-metadata") as f:
 				for line in f:
