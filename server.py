@@ -82,9 +82,9 @@ def index():
 		discover_environment()  # go and find the details of the environment and load it into conf...
 		log.info(
 			"\nSERVER CONFIG:\n--------------\n"+
-			pprint.pformat(conf._sections['NETSCALER'])+"\n"+
-			pprint.pformat(conf._sections['LOADGENERATOR'])+"\n"+
-			pprint.pformat(conf._sections['WEBSERVERS']))
+			"\nNETSCALER:\n"+pprint.pformat(conf._sections['NETSCALER'])+"\n"+
+			"\nLOADGENERATOR:\n"+pprint.pformat(conf._sections['LOADGENERATOR'])+"\n"+
+			"\nWEBSERVERS:\n"+pprint.pformat(conf._sections['WEBSERVERS']))
 
 		# update build the deployment file based on the discovered config.
 		if conf.get('NETSCALER', 'vip') and conf.get('WEBSERVERS', 'web1_ip') and conf.get('WEBSERVERS', 'web2_ip'):
@@ -276,7 +276,7 @@ def get_data():
 
 
 # show the log file
-@bottle.route('/server/log')
+@bottle.route('/log')
 def server_log():
 	log_content = ""
 	# first append the previous log if it exists
