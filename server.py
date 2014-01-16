@@ -80,7 +80,11 @@ def index():
 	# check config and see if i need to setup anything on first run...
 	if not conf.getboolean('DEFAULT', 'discovered'):
 		discover_environment()  # go and find the details of the environment and load it into conf...
-		log.info("\nSERVER CONFIG:\n--------------\n"+pprint.pformat(conf._sections))
+		log.info(
+			"\nSERVER CONFIG:\n--------------\n"+
+			pprint.pformat(conf._sections['NETSCALER'])+"\n"+
+			pprint.pformat(conf._sections['LOADGENERATOR'])+"\n"+
+			pprint.pformat(conf._sections['WEBSERVERS']))
 
 		# update build the deployment file based on the discovered config.
 		if conf.get('NETSCALER', 'vip') and conf.get('WEBSERVERS', 'web1_ip') and conf.get('WEBSERVERS', 'web2_ip'):
