@@ -128,7 +128,7 @@ def index():
 						api.request('/config/nsip', payload)
 		else:
 			log.info("The Netscaler VIP or the webserver IPs where not discovered.")
-			return "The environment did not come up correctly and could not be discovered.  Try again later..."
+			bottle.redirect("/config_error")
 
 	# configure the active profile on page load...
 	profile = conf.get('NETSCALER', 'active_profile')
@@ -173,7 +173,7 @@ def index():
 # config error page
 @bottle.route('/config_error')
 def config_error():
-	return "Error configuring the environment..."
+	return "Error configuring the environment.  Please contact Citrix to resolve the issue..."
 
 
 @bottle.route('/apply_netscaler_profile')
