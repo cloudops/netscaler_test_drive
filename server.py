@@ -35,10 +35,15 @@ conf.set('AWS', 'secret_key', '')
 conf.set('AWS', 'region', 'us-east-1')
 
 conf.add_section('NETSCALER')
+conf.set('NETSCALER', 'active_profile', 'profile_1')
 conf.set('NETSCALER', 'host', '')
 conf.set('NETSCALER', 'user', 'nsroot')
 conf.set('NETSCALER', 'pass', 'nsroot')
-conf.set('NETSCALER', 'active_profile', 'profile_1')
+conf.set('NETSCALER', 'instance_id', '')
+conf.set('NETSCALER', 'nsip', '')
+conf.set('NETSCALER', 'eip', '')
+conf.set('NETSCALER', 'mip', '')
+conf.set('NETSCALER', 'vip', '')
 
 load_generators = ['load_gen']
 conf.add_section('LOADGENERATOR')
@@ -78,7 +83,7 @@ def index():
 		log.info("\nSERVER CONFIG:\n--------------\n"+pprint.pformat(conf._sections))
 
 		# update build the deployment file based on the discovered config.
-		if conf.get('NETSCALER', 'vip') and conf.get('WEBSERVERS', 'web1_ip') != '' and conf.get('WEBSERVERS', 'web2_ip') != '':
+		if conf.get('NETSCALER', 'vip') and conf.get('WEBSERVERS', 'web1_ip') and conf.get('WEBSERVERS', 'web2_ip'):
 			with open("ns_profiles/profile_deployment.xml", "wt") as fout:
 				with open("ns_profiles/profile_deployment.xml.tpl", "rt") as fin:
 					for line in fin:
