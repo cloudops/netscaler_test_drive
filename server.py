@@ -30,8 +30,8 @@ conf.set('DEFAULT', 'server_reloader', 'False')
 conf.set('DEFAULT', 'server_debug', 'False')
 
 conf.add_section('AWS')
-conf.set('AWS', 'aws_access_key', '')
-conf.set('AWS', 'aws_secret_key', '')
+conf.set('AWS', 'access_key', '')
+conf.set('AWS', 'secret_key', '')
 conf.set('AWS', 'region', 'us-east-1')
 
 conf.add_section('NETSCALER')
@@ -40,28 +40,26 @@ conf.set('NETSCALER', 'user', 'nsroot')
 conf.set('NETSCALER', 'pass', 'nsroot')
 conf.set('NETSCALER', 'active_profile', 'profile_1')
 
+load_generators = ['load_gen']
+conf.add_section('LOADGENERATOR')
+for lg in load_generators:
+	conf.set('LOADGENERATOR', lg+'_id', '')
+	conf.set('LOADGENERATOR', lg+'_ip', '')
+
+webservers = ['web1', 'web2']
 conf.add_section('WEBSERVERS')
-conf.set('WEBSERVERS', 'web1_id', '')
-conf.set('WEBSERVERS', 'web1_ip', '')
-conf.set('WEBSERVERS', 'web2_id', '')
-conf.set('WEBSERVERS', 'web2_ip', '')
+for ws in webservers:
+	conf.set('WEBSERVERS', ws+'_id', '')
+	conf.set('WEBSERVERS', ws+'_ip', '')
+
 
 # read in config if it exists
 if os.path.exists("./server.conf"):
     conf.read("./server.conf")
 
-# load the config options into variables
-server_host = conf.get('DEFAULT', 'server_host')
-server_port = conf.getint('DEFAULT', 'server_port')
-server_reloader = conf.getboolean('DEFAULT', 'server_reloader')
-server_debug = conf.getboolean('DEFAULT', 'server_debug')
-
-aws_access_key = conf.get('AWS', 'aws_access_key')
-aws_secret_key = conf.get('AWS', 'aws_secret_key')
-
 # add server logging via the rocket server
 log = logging.getLogger('Rocket')
-if server_debug:
+if conf.getboolean('DEFAULT', 'server_debug'):
 	log.setLevel(logging.DEBUG)
 else:
 	log.setLevel(logging.INFO)
@@ -85,27 +83,31 @@ def index():
 				with open("ns_profiles/profile_deployment.xml.tpl", "rt") as fin:
 					for line in fin:
 						fout.write(line.replace('{{netscaler_vip}}', conf.get('NETSCALER', 'vip')).replace('{{webserver_1_ip}}', conf.get('WEBSERVERS', 'web1_ip')).replace('{{webserver_2_ip}}', conf.get('WEBSERVERS', 'web2_ip')))
-			ssh = ssh_client(conf.get('NETSCALER', 'host'), 22, conf.get('NETSCALER', 'user'), conf.get('NETSCALER', 'pass'))
+			ns_ssh = ssh_client(conf.get('NETSCALER', 'host'), 22, conf.get('NETSCALER', 'user'), conf.get('NETSCALER', 'pass'))
 			
 			# fix the file permissions (as per a bug on the NS; Dec 2013)
-			stdin1, stdout1, stderr1 = ssh.exec_command('shell "chmod ugo+w /nsconfig/nstemplates/applications"')
-			stdin2, stdout2, stderr2 = ssh.exec_command('shell "chmod ugo+w /nsconfig/nstemplates/applications/deployment_files"')
-			stdin3, stdout3, stderr3 = ssh.exec_command('shell "chmod go+x /flash/nsconfig"')
+			ns_stdin1, ns_stdout1, ns_stderr1 = ns_ssh.exec_command('shell "chmod ugo+w /nsconfig/nstemplates/applications"')
+			ns_stdin2, ns_stdout2, ns_stderr2 = ns_ssh.exec_command('shell "chmod ugo+w /nsconfig/nstemplates/applications/deployment_files"')
+			ns_stdin3, ns_stdout3, ns_stderr3 = ns_ssh.exec_command('shell "chmod go+x /flash/nsconfig"')
 
 			## debugging example
-			#print stdout1.readlines()
-			#print stderr1.readlines()
+			#log.info("stdout1: "+str(ns_stdout1.readlines()))
+			#log.info("stderr1: "+str(ns_stderr1.readlines()))
+			#log.info("stdout2: "+str(ns_stdout2.readlines()))
+			#log.info("stderr2: "+str(ns_stderr2.readlines()))
+			#log.info("stdout3: "+str(ns_stdout3.readlines()))
+			#log.info("stderr3: "+str(ns_stderr3.readlines()))
 
-			sftp = ssh.open_sftp()
-			sftp.put('ns_profiles/profile_1.xml', '/nsconfig/nstemplates/applications/profile_1.xml')
-			sftp.put('ns_profiles/profile_2.xml', '/nsconfig/nstemplates/applications/profile_2.xml')
-			#sftp.put('ns_profiles/profile_3.xml', '/nsconfig/nstemplates/applications/profile_3.xml')
-			sftp.put('ns_profiles/profile_deployment.xml', '/nsconfig/nstemplates/applications/deployment_files/profile_deployment.xml')
+			ns_sftp = ns_ssh.open_sftp()
+			ns_sftp.put('ns_profiles/profile_1.xml', '/nsconfig/nstemplates/applications/profile_1.xml')
+			ns_sftp.put('ns_profiles/profile_2.xml', '/nsconfig/nstemplates/applications/profile_2.xml')
+			#ns_sftp.put('ns_profiles/profile_3.xml', '/nsconfig/nstemplates/applications/profile_3.xml')
+			ns_sftp.put('ns_profiles/profile_deployment.xml', '/nsconfig/nstemplates/applications/deployment_files/profile_deployment.xml')
 
-			sftp.close()
-			ssh.close()
+			ns_sftp.close()
+			ns_ssh.close()
 			
-			with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=server_debug) as api:
+			with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=conf.getboolean('DEFAULT', 'server_debug')) as api:
 				# setup the IP addresses for the VIP and the MIP
 				if conf.get('NETSCALER', 'mip') and conf.get('NETSCALER', 'vip'):
 					for ip_type in ['mip', 'vip']:
@@ -125,7 +127,7 @@ def index():
 
 	# configure the active profile on page load...
 	profile = conf.get('NETSCALER', 'active_profile')
-	with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=server_debug) as api:
+	with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=conf.getboolean('DEFAULT', 'server_debug')) as api:
 		# try and blow away all the potential configs
 		try:
 			api.request('/config/application?args=appname:profile_1', method='DELETE')
@@ -176,7 +178,7 @@ def apply_netscaler_profile():
 		profile = bottle.request.query.profile
 		active_profile = conf.get('NETSCALER', 'active_profile')
 
-		with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=server_debug) as api:
+		with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=conf.getboolean('DEFAULT', 'server_debug')) as api:
 			# remove the current template so we can update the active profile
 			try:
 				api.request('/config/application?args=appname:'+active_profile, method='DELETE')
@@ -259,7 +261,7 @@ def get_data():
 		query = json.loads(bottle.request.query.qs)
 
 		bottle.response.set_header('Content-Type', 'text/plain')
-		return get_cloudwatch_data(query, request_id, aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
+		return get_cloudwatch_data(query, request_id, aws_access_key_id=conf.get('AWS', 'access_key'), aws_secret_access_key=conf.get('AWS', 'secret_key'))
 	else:
 		return ""
 
@@ -440,9 +442,9 @@ def get_cloudwatch_data(cloudviz_query, request_id, aws_access_key_id=None, aws_
 
 
 def discover_environment():
-	if aws_access_key and aws_secret_key:
+	if conf.get('AWS', 'access_key') and conf.get('AWS', 'secret_key'):
 		import os
-		dashboard_instance_id = None # 'i-06abc632'
+		dashboard_instance_id = 'i-06abc632' #None # 
 		try:
 			with os.popen("/opt/aws/bin/ec2-metadata") as f:
 				for line in f:
@@ -452,11 +454,12 @@ def discover_environment():
 		except: pass
 
 		if dashboard_instance_id:
-			conn = boto.ec2.connect_to_region(conf.get('AWS', 'region'), aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
+			conn = boto.ec2.connect_to_region(conf.get('AWS', 'region'), aws_access_key_id=conf.get('AWS', 'access_key'), aws_secret_access_key=conf.get('AWS', 'secret_key'))
 			dashboard_instance = conn.get_only_instances([dashboard_instance_id])
 			conf.set('DEFAULT', 'vpc_id', dashboard_instance[0].vpc_id)
 			all_instances = conn.get_only_instances(filters={'vpc_id':dashboard_instance[0].vpc_id})
-			webservers = ['web1', 'web2']
+			lgs = load_generators
+			wss = webservers
 			for instance in all_instances:
 				if instance.id == dashboard_instance_id or instance.state != 'running':
 					continue # skip this instance...
@@ -471,9 +474,15 @@ def discover_environment():
 						if ip_instance.private_ip_address != instance.private_ip_address:
 							conf.set('NETSCALER', ns_ips.pop(0), ip_instance.private_ip_address)
 				else:
-					webserver = webservers.pop(0)
-					conf.set('WEBSERVERS', webserver+'_id', instance.id)
-					conf.set('WEBSERVERS', webserver+'_ip', instance.private_ip_address)
+					if len(lgs) > 0:
+						load_generator = lgs.pop(0)
+						conf.set('LOADGENERATOR', load_generator+'_id', instance.id)
+						conf.set('LOADGENERATOR', load_generator+'_ip', instance.private_ip_address)
+					else:
+						if len(wss) > 0:
+							webserver = wss.pop(0)
+							conf.set('WEBSERVERS', webserver+'_id', instance.id)
+							conf.set('WEBSERVERS', webserver+'_ip', instance.private_ip_address)
 			conf.set('DEFAULT', 'discovered', 'true')
 			log.info("Discovered: "+str(conf.getboolean('DEFAULT', 'discovered')))
 		else:
@@ -484,20 +493,32 @@ def discover_environment():
 		bottle.redirect("/config_error")
 
 
-def ssh_client(server, port, user, password):
+def ssh_client(server, port, username=None, password=None, key_filename=None):
     client = paramiko.SSHClient()
     client.load_system_host_keys()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(server, port, user, password)
+    if username and password:
+    	client.connect(server, port, username=username, password=password)
+    elif key_filename and password:
+    	client.connect(server, port, password=password, key_filename=key_filename)
+    elif key_filename:
+    	client.connect(server, port, key_filename=key_filename)
+    else:
+    	client.connect(server, port)
     return client
 
 
-print "Reloader On: "+str(server_reloader)
-if server_debug:
+print "Reloader On: "+str(conf.getboolean('DEFAULT', 'server_reloader'))
+if conf.getboolean('DEFAULT', 'server_debug'):
 	print "Logging Level: DEBUG"
 else:
 	print "Logging Level: INFO"
 
 
 # start the server.
-bottle.run(server='rocket', host=server_host, port=server_port, reloader=server_reloader, debug=server_debug)
+bottle.run(
+	server='rocket', 
+	host=conf.get('DEFAULT', 'server_host'), 
+	port=conf.getint('DEFAULT', 'server_port'), 
+	reloader=conf.getboolean('DEFAULT', 'server_reloader'), 
+	debug=conf.getboolean('DEFAULT', 'server_debug'))

@@ -13,7 +13,7 @@
   </template_info>
   <appendpoint_list>
     <appendpoint>
-      <ipv46>172.31.44.226</ipv46>
+      <ipv46>172.31.47.229</ipv46>
       <port>80</port>
       <servicetype>HTTP</servicetype>
     </appendpoint>
