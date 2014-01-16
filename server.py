@@ -132,6 +132,8 @@ def index():
 						api.request('/config/nsip', payload)
 		else:
 			log.info("The Netscaler VIP or the webserver IPs where not discovered.")
+			conf.set('DEFAULT', 'discovered', 'false')
+			log.info("Resetting to 'undiscovered' because of a discovery error..."))
 			bottle.redirect("/config_error")
 
 	# configure the active profile on page load...
@@ -493,7 +495,7 @@ def discover_environment():
 							conf.set('WEBSERVERS', webserver+'_id', instance.id)
 							conf.set('WEBSERVERS', webserver+'_ip', instance.private_ip_address)
 			conf.set('DEFAULT', 'discovered', 'true')
-			log.info("Discovered: "+str(conf.getboolean('DEFAULT', 'discovered')))
+			log.info("Discovery attempted..."))
 		else:
 			log.info("Failed to find the instance id, can't auto configure environment...")
 			bottle.redirect("/config_error")
