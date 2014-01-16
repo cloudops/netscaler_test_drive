@@ -495,7 +495,7 @@ def discover_environment():
 							conf.set('WEBSERVERS', webserver+'_id', instance.id)
 							conf.set('WEBSERVERS', webserver+'_ip', instance.private_ip_address)
 			conf.set('DEFAULT', 'discovered', 'true')
-			log.info("Discovery attempted..."))
+			log.info("Discovery attempted...")
 		else:
 			log.info("Failed to find the instance id, can't auto configure environment...")
 			bottle.redirect("/config_error")
