@@ -81,7 +81,7 @@ def index():
 	if not conf.getboolean('DEFAULT', 'discovered'):
 		discover_environment()  # go and find the details of the environment and load it into conf...
 		log.info(
-			"\n\nSERVER CONFIG:\n--------------"+
+			"\n\nSERVER CONFIG:\n--------------\n"+
 			"\nNETSCALER:\n"+pprint.pformat(conf._sections['NETSCALER'])+"\n"+
 			"\nLOADGENERATOR:\n"+pprint.pformat(conf._sections['LOADGENERATOR'])+"\n"+
 			"\nWEBSERVERS:\n"+pprint.pformat(conf._sections['WEBSERVERS'])+"\n")
