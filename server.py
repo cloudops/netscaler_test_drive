@@ -453,54 +453,67 @@ def get_cloudwatch_data(cloudviz_query, request_id, aws_access_key_id=None, aws_
 
 
 def discover_environment():
-	if conf.get('AWS', 'access_key') and conf.get('AWS', 'secret_key'):
-		import os
-		dashboard_instance_id = None # 'i-06abc632' #
-		try:
-			with os.popen("/opt/aws/bin/ec2-metadata") as f:
-				for line in f:
-					if line.startswith("instance-id:"):
-						dashboard_instance_id = line.split(" ")[1].strip()
-						break
-		except: pass
+	try:
+		if conf.get('AWS', 'access_key') and conf.get('AWS', 'secret_key'):
+			import os
+			dashboard_instance_id = None # 'i-06abc632' #
+			try:
+				with os.popen("/opt/aws/bin/ec2-metadata") as f:
+					for line in f:
+						if line.startswith("instance-id:"):
+							dashboard_instance_id = line.split(" ")[1].strip()
+							log.info("Determined the control panel instance_id to be: "+dashboard_instance_id)
+							break
+			except: pass
 
-		if dashboard_instance_id:
-			conn = boto.ec2.connect_to_region(conf.get('AWS', 'region'), aws_access_key_id=conf.get('AWS', 'access_key'), aws_secret_access_key=conf.get('AWS', 'secret_key'))
-			dashboard_instance = conn.get_only_instances([dashboard_instance_id])
-			conf.set('DEFAULT', 'vpc_id', dashboard_instance[0].vpc_id)
-			all_instances = conn.get_only_instances(filters={'vpc_id':dashboard_instance[0].vpc_id})
-			lgs = load_generators
-			wss = webservers
-			for instance in all_instances:
-				if instance.id == dashboard_instance_id or instance.state != 'running':
-					continue # skip this instance...
+			if dashboard_instance_id:
+				log.info("Creating a connection with AWS on region: "+conf.get('AWS', 'region'))
+				conn = boto.ec2.connect_to_region(conf.get('AWS', 'region'), aws_access_key_id=conf.get('AWS', 'access_key'), aws_secret_access_key=conf.get('AWS', 'secret_key'))
+				log.info("Attempting to get data about the environment from AWS using the instance id")
+				dashboard_instance = conn.get_only_instances([dashboard_instance_id])
+				log.info("Determined the VPC ID to be: "+dashboard_instance[0].vpc_id)
+				conf.set('DEFAULT', 'vpc_id', dashboard_instance[0].vpc_id)
+				log.info("Getting all instances in the VPC")
+				all_instances = conn.get_only_instances(filters={'vpc_id':dashboard_instance[0].vpc_id})
+				lgs = load_generators
+				wss = webservers
+				for instance in all_instances:
+					if instance.id == dashboard_instance_id or instance.state != 'running':
+						continue # skip this instance...
 
-				if instance.platform == 'windows': # its the NETSCALER and its running
-					conf.set('NETSCALER', 'instance_id', instance.id)
-					conf.set('NETSCALER', 'host', instance.ip_address)
-					conf.set('NETSCALER', 'eip', instance.ip_address)
-					conf.set('NETSCALER', 'nsid', instance.private_ip_address)
-					ns_ips = ['mip', 'vip']
-					for ip_instance in instance.interfaces[0].private_ip_addresses:
-						if ip_instance.private_ip_address != instance.private_ip_address:
-							conf.set('NETSCALER', ns_ips.pop(0), ip_instance.private_ip_address)
-				else:
-					if len(lgs) > 0:
-						load_generator = lgs.pop(0)
-						conf.set('LOADGENERATOR', load_generator+'_id', instance.id)
-						conf.set('LOADGENERATOR', load_generator+'_ip', instance.private_ip_address)
+					if instance.platform == 'windows': # its the NETSCALER and its running
+						log.info("Found the NETSCALER with instance id '%s' and public ip '%s'" % (instance.id, instance.ip_address))
+						conf.set('NETSCALER', 'instance_id', instance.id)
+						conf.set('NETSCALER', 'host', instance.ip_address)
+						conf.set('NETSCALER', 'eip', instance.ip_address)
+						conf.set('NETSCALER', 'nsid', instance.private_ip_address)
+						ns_ips = ['mip', 'vip']
+						for ip_instance in instance.interfaces[0].private_ip_addresses:
+							if ip_instance.private_ip_address != instance.private_ip_address:
+								conf.set('NETSCALER', ns_ips.pop(0), ip_instance.private_ip_address)
 					else:
-						if len(wss) > 0:
-							webserver = wss.pop(0)
-							conf.set('WEBSERVERS', webserver+'_id', instance.id)
-							conf.set('WEBSERVERS', webserver+'_ip', instance.private_ip_address)
-			conf.set('DEFAULT', 'discovered', 'true')
-			log.info("Discovery attempted...")
+						if len(lgs) > 0:
+							log.info("Found the LOADGENERATOR with instance id '%s' and private ip '%s'" % (instance.id, instance.private_ip_address))
+							load_generator = lgs.pop(0)
+							conf.set('LOADGENERATOR', load_generator+'_id', instance.id)
+							conf.set('LOADGENERATOR', load_generator+'_ip', instance.private_ip_address)
+						else:
+							if len(wss) > 0:
+								log.info("Found a WEBSERVERS with instance id '%s' and private ip '%s'" % (instance.id, instance.private_ip_address))
+								webserver = wss.pop(0)
+								conf.set('WEBSERVERS', webserver+'_id', instance.id)
+								conf.set('WEBSERVERS', webserver+'_ip', instance.private_ip_address)
+				conf.set('DEFAULT', 'discovered', 'true')
+				log.info("Finished initial discovery...")
+			else:
+				log.info("Failed to find the instance id, can't auto configure environment...")
+				bottle.redirect("/config_error")
 		else:
-			log.info("Failed to find the instance id, can't auto configure environment...")
+			log.info("AWS credentials have not been configured correctly...")
 			bottle.redirect("/config_error")
-	else:
-		log.info("AWS credentials have not been configured correctly...")
+	except Exception, e:
+		log.exception(e)
+		log.info("Environment discovery failed with an exception...")
 		bottle.redirect("/config_error")
 
 
