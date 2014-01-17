@@ -486,7 +486,7 @@ def discover_environment():
 						conf.set('NETSCALER', 'instance_id', instance.id)
 						conf.set('NETSCALER', 'host', instance.ip_address)
 						conf.set('NETSCALER', 'eip', instance.ip_address)
-						conf.set('NETSCALER', 'nsid', instance.private_ip_address)
+						conf.set('NETSCALER', 'nsip', instance.private_ip_address)
 						ns_ips = ['mip', 'vip']
 						for ip_instance in instance.interfaces[0].private_ip_addresses:
 							if ip_instance.private_ip_address != instance.private_ip_address:
