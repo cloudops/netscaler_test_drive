@@ -64,6 +64,7 @@ if os.path.exists("./server.conf"):
 
 # add server logging via the rocket server
 log = logging.getLogger('Rocket')
+logging.getLogger('Rocket').propagate = False
 if conf.getboolean('DEFAULT', 'server_debug'):
 	log.setLevel(logging.DEBUG)
 else:
@@ -133,7 +134,7 @@ def index():
 
 			if conf.get('LOADGENERATOR', 'load_gen_ip') and conf.get('NETSCALER', 'vip'):
 				lg_ssh = ssh_client(conf.get('LOADGENERATOR', 'load_gen_ip'), 22, username='ubuntu', key_filename='./creds/dddemotest.pem')
-				lg_stdin1, lg_stdout1, lg_stderr1 = lg_ssh.exec_command('sudo nohup /home/ubuntu/replay.sh '+conf.get('NETSCALER', 'vip'))
+				lg_stdin1, lg_stdout1, lg_stderr1 = lg_ssh.exec_command('sudo su -; nohup /home/ubuntu/replay.sh '+conf.get('NETSCALER', 'vip')+' &')
 				log.info("stdout1: "+str(lg_stdout1.readlines()))
 				log.info("stderr1: "+str(lg_stderr1.readlines()))
 				lg_ssh.close()
