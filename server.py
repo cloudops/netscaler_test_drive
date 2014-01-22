@@ -130,6 +130,10 @@ def index():
 							}
 						}
 						api.request('/config/nsip', payload)
+
+			if conf.get('LOADGENERATOR', 'load_gen_ip') and conf.get('NETSCALER', 'vip'):
+				lg_ssh = ssh_client(conf.get('LOADGENERATOR', 'load_gen_ip'), 22, username='ubuntu', key_filename='./creds/dddemotest.pem')
+				lg_stdin1, lg_stdout1, lg_stderr1 = lg_ssh.exec_command('sudo nohup /home/ubuntu/replay.sh '+conf.get('NETSCALER', 'vip')+' &')
 		else:
 			log.info("The Netscaler VIP or the webserver IPs where not discovered.")
 			conf.set('DEFAULT', 'discovered', 'false')
@@ -521,14 +525,14 @@ def ssh_client(server, port, username=None, password=None, key_filename=None):
     client = paramiko.SSHClient()
     client.load_system_host_keys()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    if username and password:
-    	client.connect(server, port, username=username, password=password)
-    elif key_filename and password:
-    	client.connect(server, port, password=password, key_filename=key_filename)
-    elif key_filename:
-    	client.connect(server, port, key_filename=key_filename)
-    else:
-    	client.connect(server, port)
+    kwargs = {}
+    if username:
+    	kwargs['username'] = username
+    if password:
+    	kwargs['password'] = password
+    if key_filename:
+    	kwargs['key_filename'] = key_filename
+    client.connect(server, port, **kwargs)
     return client
 
 
