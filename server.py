@@ -134,10 +134,16 @@ def index():
 
 			if conf.get('LOADGENERATOR', 'load_gen_ip') and conf.get('NETSCALER', 'vip'):
 				log.info("Attempting to start the Load Generator...")
-				with os.popen("ssh -i ./creds/dddemotest.pem ubuntu@"+conf.get('LOADGENERATOR', 'load_gen_ip')+" 'sudo nohup /home/ubuntu/replay.sh "+conf.get('NETSCALER', 'vip')+" > nohup.out 2> nohup.err < /dev/null &'") as f:
-					for line in f:
-						log.info("Remote LG: "+line)
-				log.info("Load Generator started...")
+				lg_ssh = ssh_client(conf.get('LOADGENERATOR', 'load_gen_ip'), 22, username='ubuntu', key_filename='./creds/dddemotest.pem')
+				
+				# fix the file permissions (as per a bug on the NS; Dec 2013)
+				lg_stdin1, lg_stdout1, lg_stderr1 = lg_ssh.exec_command("sudo nohup /home/ubuntu/replay.sh "+conf.get('NETSCALER', 'vip')+" > nohup.out 2> nohup.err < /dev/null &")
+				log.info("LG STDOUT: "+str(lg_stdout1.readlines()))
+				log.info("LG STDERR: "+str(lg_stderr1.readlines()))
+				lg_ssh.close()
+				#with os.popen("ssh -i ./creds/dddemotest.pem ubuntu@"+conf.get('LOADGENERATOR', 'load_gen_ip')+" 'sudo nohup /home/ubuntu/replay.sh "+conf.get('NETSCALER', 'vip')+" > nohup.out 2> nohup.err < /dev/null &'") as f:
+				#	for line in f:
+				#		log.info("Remote LG: "+line)
 		else:
 			log.info("The Netscaler VIP or the webserver IPs where not discovered.")
 			conf.set('DEFAULT', 'discovered', 'false')
