@@ -134,6 +134,10 @@ def index():
 			if conf.get('LOADGENERATOR', 'load_gen_ip') and conf.get('NETSCALER', 'vip'):
 				lg_ssh = ssh_client(conf.get('LOADGENERATOR', 'load_gen_ip'), 22, username='ubuntu', key_filename='./creds/dddemotest.pem')
 				lg_stdin1, lg_stdout1, lg_stderr1 = lg_ssh.exec_command('sudo nohup /home/ubuntu/replay.sh '+conf.get('NETSCALER', 'vip')+' &')
+				log.info("stdout1: "+str(lg_stdout1.readlines()))
+				log.info("stderr1: "+str(lg_stderr1.readlines()))
+				lg_ssh.close()
+				log.info("Load Generator has been started...")
 		else:
 			log.info("The Netscaler VIP or the webserver IPs where not discovered.")
 			conf.set('DEFAULT', 'discovered', 'false')
