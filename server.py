@@ -134,12 +134,10 @@ def index():
 
 			if conf.get('LOADGENERATOR', 'load_gen_ip') and conf.get('NETSCALER', 'vip'):
 				log.info("Attempting to start the Load Generator...")
-				lg_ssh = ssh_client(conf.get('LOADGENERATOR', 'load_gen_ip'), 22, username='ubuntu', key_filename='./creds/dddemotest.pem')
-				lg_stdin1, lg_stdout1, lg_stderr1 = lg_ssh.exec_command('sudo nohup /home/ubuntu/replay.sh '+conf.get('NETSCALER', 'vip')+' &')
-				#log.info("stdout1: "+str(lg_stdout1.readlines()))
-				#log.info("stderr1: "+str(lg_stderr1.readlines()))
-				lg_ssh.close()
-				log.info("Load Generator has been started...")
+				with os.popen("ssh -i ./creds/dddemotest.pem ubuntu@"+conf.get('LOADGENERATOR', 'load_gen_ip')+" 'sudo nohup /home/ubuntu/replay.sh "+conf.get('NETSCALER', 'vip')+" > nohup.out 2> nohup.err < /dev/null &'") as f:
+					for line in f:
+						log.info("Remote LG: "+line)
+				log.info("Load Generator started...")
 		else:
 			log.info("The Netscaler VIP or the webserver IPs where not discovered.")
 			conf.set('DEFAULT', 'discovered', 'false')
@@ -465,7 +463,6 @@ def get_cloudwatch_data(cloudviz_query, request_id, aws_access_key_id=None, aws_
 def discover_environment():
 	try:
 		if conf.get('AWS', 'access_key') and conf.get('AWS', 'secret_key'):
-			import os
 			dashboard_instance_id = None # 'i-06abc632' #
 			try:
 				with os.popen("/opt/aws/bin/ec2-metadata") as f:
