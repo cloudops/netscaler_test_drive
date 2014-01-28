@@ -134,8 +134,9 @@ def index():
 
 			if conf.get('LOADGENERATOR', 'load_gen_ip') and conf.get('NETSCALER', 'vip'):
 				log.info("Attempting to start the Load Generator...")
+				now = str(time.time()).split(".")[0]
 				lg_ssh = ssh_client(conf.get('LOADGENERATOR', 'load_gen_ip'), 22, username='ubuntu', key_filename='./creds/dddemotest.pem')
-				lg_stdin1, lg_stdout1, lg_stderr1 = lg_ssh.exec_command("sudo nohup /home/ubuntu/replay.sh "+conf.get('NETSCALER', 'vip')+" > nohup.log 2> nohup.err < /dev/null &")
+				lg_stdin1, lg_stdout1, lg_stderr1 = lg_ssh.exec_command("sudo nohup /home/ubuntu/replay.sh "+conf.get('NETSCALER', 'vip')+" > nohup_"+now+".log 2> nohup_"+now+".err < /dev/null &")
 				log.info("LG STDOUT: "+str(lg_stdout1.readlines()))
 				log.info("LG STDERR: "+str(lg_stderr1.readlines()))
 				lg_ssh.close()
