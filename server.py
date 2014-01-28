@@ -135,7 +135,7 @@ def index():
 			if conf.get('LOADGENERATOR', 'load_gen_ip') and conf.get('NETSCALER', 'vip'):
 				log.info("Attempting to start the Load Generator...")
 				lg_ssh = ssh_client(conf.get('LOADGENERATOR', 'load_gen_ip'), 22, username='ubuntu', key_filename='./creds/dddemotest.pem')
-				lg_stdin1, lg_stdout1, lg_stderr1 = lg_ssh.exec_command("sudo nohup /home/ubuntu/replay.sh "+conf.get('NETSCALER', 'vip')+" > nohup.out 2> nohup.err < /dev/null &")
+				lg_stdin1, lg_stdout1, lg_stderr1 = lg_ssh.exec_command("sudo nohup /home/ubuntu/replay.sh "+conf.get('NETSCALER', 'vip')+" > nohup.log 2> nohup.err < /dev/null &")
 				log.info("LG STDOUT: "+str(lg_stdout1.readlines()))
 				log.info("LG STDERR: "+str(lg_stderr1.readlines()))
 				lg_ssh.close()
@@ -507,7 +507,7 @@ def discover_environment():
 							conf.set('LOADGENERATOR', load_generator+'_ip', instance.private_ip_address)
 						else:
 							if len(wss) > 0:
-								log.info("Found a WEBSERVERS with instance id '%s' and private ip '%s'" % (instance.id, instance.private_ip_address))
+								log.info("Found a WEBSERVER with instance id '%s' and private ip '%s'" % (instance.id, instance.private_ip_address))
 								webserver = wss.pop(0)
 								conf.set('WEBSERVERS', webserver+'_id', instance.id)
 								conf.set('WEBSERVERS', webserver+'_ip', instance.private_ip_address)
