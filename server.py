@@ -118,6 +118,16 @@ def index():
 			ns_ssh.close()
 			
 			with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=conf.getboolean('DEFAULT', 'server_debug')) as api:
+				# enable features
+		        payload = {
+		            'sessionid':api.session,
+		            'onerror':'rollback',
+		            'nsfeature': {
+		                'feature': ['LB', 'CS', 'CMP', 'CF', 'IC', 'REWRITE', 'AppFw', 'RESPONDER']
+		            }
+		        }
+		        api.request('/config/nsfeature?action=enable', payload)
+
 				# setup the IP addresses for the VIP and the MIP
 				if conf.get('NETSCALER', 'mip') and conf.get('NETSCALER', 'vip'):
 					for ip_type in ['mip', 'vip']:
