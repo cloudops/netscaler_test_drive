@@ -229,7 +229,7 @@
             </li>
             <li id="profile_2" class="profile">
                 <div class="profile-name">Acceleration &amp; Optimization</div>
-                <div class="profile-desc">Optimize the load balanced traffic with caching and compression</div>
+                <div class="profile-desc">Optimize the load balanced traffic with compression</div>
                 <div class="profile-apply"><button>Apply</button></div>
             </li>
             <!--<li id="profile_3" class="profile">

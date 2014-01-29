@@ -118,7 +118,7 @@ def index():
 			ns_ssh.close()
 			
 			with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=conf.getboolean('DEFAULT', 'server_debug')) as api:
-				# enable features
+				# enable features (this is required to get our rules to get run)
 				payload = {
 					'sessionid':api.session,
 					'onerror':'rollback',
