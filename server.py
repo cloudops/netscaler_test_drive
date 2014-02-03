@@ -159,16 +159,13 @@ def index():
 	# configure the active profile on page load...
 	profile = conf.get('NETSCALER', 'active_profile')
 	with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=conf.getboolean('DEFAULT', 'server_debug')) as api:
-		## try and blow away all the potential configs
-		#try:
-		#	api.request('/config/application?args=appname:profile_1', method='DELETE')
-		#	api.request('/config/application?args=appname:profile_2', method='DELETE')
-		#	api.request('/config/application?args=appname:profile_3', method='DELETE')
-		#except:
-		#	pass
-
-		loaded_profile = api.request('/config/application?args=appname:'+profile)
-		log.info(loaded_profile)
+		# try and blow away all the potential configs
+		try:
+			#api.request('/config/application?args=appname:profile_1', method='DELETE')
+			#api.request('/config/application?args=appname:profile_2', method='DELETE')
+			api.request('/config/application?args=appname:profile_3', method='DELETE')
+		except:
+			pass
 
 		# configure the active profile
 		payload = {
