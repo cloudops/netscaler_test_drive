@@ -156,39 +156,43 @@ def index():
 			log.info("Resetting to 'undiscovered' because of a discovery error...")
 			bottle.redirect("/config_error")
 
-	# configure the active profile on page load...
-	profile = conf.get('NETSCALER', 'active_profile')
-	with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=conf.getboolean('DEFAULT', 'server_debug')) as api:
-		# try and blow away all the potential configs
-		try:
-			#api.request('/config/application?args=appname:profile_1', method='DELETE')
-			#api.request('/config/application?args=appname:profile_2', method='DELETE')
-			api.request('/config/application?args=appname:profile_3', method='DELETE')
-		except:
-			pass
+		# configure the active profile on page load...
+		profile = conf.get('NETSCALER', 'active_profile')
+		with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=conf.getboolean('DEFAULT', 'server_debug')) as api:
+			## try and blow away all the potential configs
+			#try:
+			#	#api.request('/config/application?args=appname:profile_1', method='DELETE')
+			#	#api.request('/config/application?args=appname:profile_2', method='DELETE')
+			#	api.request('/config/application?args=appname:profile_3', method='DELETE')
+			#except:
+			#	pass
 
-		# configure the active profile
-		payload = {
-			'sessionid':api.session,
-			'onerror':'rollback',
-			'application': {
-				'appname':profile,
-				'apptemplatefilename':profile+'.xml',
-				'deploymentfilename':'profile_deployment.xml'
+			# configure the active profile
+			payload = {
+				'sessionid':api.session,
+				'onerror':'rollback',
+				'application': {
+					'appname':profile,
+					'apptemplatefilename':profile+'.xml',
+					'deploymentfilename':'profile_deployment.xml'
+				}
 			}
-		}
-		api.request('/config/application?action=import', payload)
+			api.request('/config/application?action=import', payload)
 
-		# save the config
-		payload = {
-			'sessionid':api.session,
-			'onerror':'rollback',
-			'nsconfig': {}
-		}
-		api.request('/config/nsconfig?action=save', payload)
+			# save the config
+			payload = {
+				'sessionid':api.session,
+				'onerror':'rollback',
+				'nsconfig': {}
+			}
+			api.request('/config/nsconfig?action=save', payload)
 
-		if profile == 'profile_3':
-			fix_profile_3(api)
+			if profile == 'profile_3':
+				fix_profile_3(api)
+
+		# now that everything has been discovered, we can save the config to the 'server.conf' file for future.
+		with f = open('./server.conf', 'w'):
+			conf.write(f)
 
 	return dict({
 		'webservers':[
