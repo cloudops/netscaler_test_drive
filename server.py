@@ -191,8 +191,8 @@ def index():
 				fix_profile_3(api)
 
 		# now that everything has been discovered, we can save the config to the 'server.conf' file for future.
-		with f = open('./server.conf', 'w'):
-			conf.write(f)
+		with open('./server.conf', 'w') as conf_file:
+			conf.write(conf_file)
 
 	return dict({
 		'webservers':[
