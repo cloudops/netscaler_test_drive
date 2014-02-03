@@ -80,6 +80,9 @@ def index():
 	log.info("Control Panel requested...")
 	# check config and see if i need to setup anything on first run...
 	if not conf.getboolean('DEFAULT', 'discovered'):
+		log.info("Doing environment discovery...")
+		open('./nitro_api.log', 'w').close() # reset the nitro log for this config...
+
 		discover_environment()  # go and find the details of the environment and load it into conf...
 		log.info(
 			"\n\nSERVER CONFIG:\n--------------\n"+
@@ -117,7 +120,7 @@ def index():
 			ns_sftp.close()
 			ns_ssh.close()
 			
-			with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=conf.getboolean('DEFAULT', 'server_debug')) as api:
+			with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=True) as api:
 				# enable features (this is required to get our rules to get run)
 				payload = {
 					'sessionid':api.session,
@@ -158,7 +161,7 @@ def index():
 
 		# configure the active profile on page load...
 		profile = conf.get('NETSCALER', 'active_profile')
-		with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=conf.getboolean('DEFAULT', 'server_debug')) as api:
+		with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=True) as api:
 			## try and blow away all the potential configs
 			#try:
 			#	#api.request('/config/application?args=appname:profile_1', method='DELETE')
@@ -216,7 +219,7 @@ def apply_netscaler_profile():
 		profile = bottle.request.query.profile
 		active_profile = conf.get('NETSCALER', 'active_profile')
 
-		with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=conf.getboolean('DEFAULT', 'server_debug')) as api:
+		with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=True) as api:
 			# remove the current template so we can update the active profile
 			try:
 				api.request('/config/application?args=appname:'+active_profile, method='DELETE')
@@ -318,6 +321,19 @@ def server_log():
 	# then append the current log if it exists
 	try:
 		with open('./server.log', 'r') as log_file:
+			log_content += log_file.read()
+	except:
+		pass
+
+	return "<pre>"+log_content+"</pre>"
+
+
+# show the nitro log file
+@bottle.route('/nitro')
+def server_log():
+	log_content = ""
+	try:
+		with open('./nitro_api.log', 'r') as log_file:
 			log_content += log_file.read()
 	except:
 		pass
