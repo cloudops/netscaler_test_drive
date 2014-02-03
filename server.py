@@ -35,7 +35,7 @@ conf.set('AWS', 'secret_key', '')
 conf.set('AWS', 'region', 'us-east-1')
 
 conf.add_section('NETSCALER')
-conf.set('NETSCALER', 'active_profile', 'profile_1')
+conf.set('NETSCALER', 'active_profile', 'profile_3')
 conf.set('NETSCALER', 'host', '')
 conf.set('NETSCALER', 'user', 'nsroot')
 conf.set('NETSCALER', 'pass', 'nsroot')
@@ -109,9 +109,9 @@ def index():
 			#log.info("stderr3: "+str(ns_stderr3.readlines()))
 
 			ns_sftp = ns_ssh.open_sftp()
-			ns_sftp.put('ns_profiles/profile_1.xml', '/nsconfig/nstemplates/applications/profile_1.xml')
-			ns_sftp.put('ns_profiles/profile_2.xml', '/nsconfig/nstemplates/applications/profile_2.xml')
-			#ns_sftp.put('ns_profiles/profile_3.xml', '/nsconfig/nstemplates/applications/profile_3.xml')
+			#ns_sftp.put('ns_profiles/profile_1.xml', '/nsconfig/nstemplates/applications/profile_1.xml')
+			#ns_sftp.put('ns_profiles/profile_2.xml', '/nsconfig/nstemplates/applications/profile_2.xml')
+			ns_sftp.put('ns_profiles/profile_3.xml', '/nsconfig/nstemplates/applications/profile_3.xml')
 			ns_sftp.put('ns_profiles/profile_deployment.xml', '/nsconfig/nstemplates/applications/deployment_files/profile_deployment.xml')
 
 			ns_sftp.close()
@@ -159,13 +159,13 @@ def index():
 	# configure the active profile on page load...
 	profile = conf.get('NETSCALER', 'active_profile')
 	with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=conf.getboolean('DEFAULT', 'server_debug')) as api:
-		# try and blow away all the potential configs
-		try:
-			api.request('/config/application?args=appname:profile_1', method='DELETE')
-			api.request('/config/application?args=appname:profile_2', method='DELETE')
-			#api.request('/config/application?args=appname:profile_3', method='DELETE')
-		except:
-			pass
+		## try and blow away all the potential configs
+		#try:
+		#	api.request('/config/application?args=appname:profile_1', method='DELETE')
+		#	api.request('/config/application?args=appname:profile_2', method='DELETE')
+		#	api.request('/config/application?args=appname:profile_3', method='DELETE')
+		#except:
+		#	pass
 
 		# configure the active profile
 		payload = {
@@ -186,6 +186,9 @@ def index():
 			'nsconfig': {}
 		}
 		api.request('/config/nsconfig?action=save', payload)
+
+		if profile == 'profile_3':
+			fix_profile_3(api)
 
 	return dict({
 		'webservers':[
@@ -230,8 +233,8 @@ def apply_netscaler_profile():
 			if update_config != None and 'headers' in update_config:
 				# success, so update the active profile
 				conf.set('NETSCALER', 'active_profile', profile)
-				#if profile == 'profile_3':
-				#	fix_profile_3(api)
+				if profile == 'profile_3':
+					fix_profile_3(api)
 			else:
 				# failed, so let the client know which profile is active
 				profile = active_profile
@@ -249,29 +252,29 @@ def apply_netscaler_profile():
 	})
 
 
-## content switching is not supported by default when exporting and importing templates
-## by default each rule will load balance across all servers
-## here we change the rules to only point to their respective server
-#def fix_profile_3(api):
-#	lb_servers = api.request('/config/lbvserver')
-#	rule_names = []
-#	if 'lbvserver' in lb_servers:
-#		for lbvs in lb_servers['lbvserver']:
-#			if lbvs['name'].startswith('app_u_profile_3'):
-#				rule_names.append(lbvs['name'])
-#
-#	if len(rule_names) > 0:
-#		lb_bindings = []
-#		for rule in rule_names:
-#			rule_binding = api.request('/config/lbvserver_service_binding/'+rule)
-#			if 'lbvserver_service_binding' in rule_binding:
-#				for rb in rule_binding['lbvserver_service_binding']:
-#					if rb['servicename'] not in lb_bindings:
-#						lb_bindings.append(rb['servicename'])
-#
-#		if len(lb_bindings) > 0:
-#			for rule in rule_names:
-#				api.request('/config/lbvserver_service_binding/'+rule+'?args=servicename:'+lb_bindings.pop(0), method="DELETE")
+# content switching is not supported by default when exporting and importing templates
+# by default each rule will load balance across all servers
+# here we change the rules to only point to their respective server
+def fix_profile_3(api):
+	lb_servers = api.request('/config/lbvserver')
+	rule_names = []
+	if 'lbvserver' in lb_servers:
+		for lbvs in lb_servers['lbvserver']:
+			if lbvs['name'].startswith('app_u_profile_3'):
+				rule_names.append(lbvs['name'])
+
+	if len(rule_names) > 0:
+		lb_bindings = []
+		for rule in rule_names:
+			rule_binding = api.request('/config/lbvserver_service_binding/'+rule)
+			if 'lbvserver_service_binding' in rule_binding:
+				for rb in rule_binding['lbvserver_service_binding']:
+					if rb['servicename'] not in lb_bindings:
+						lb_bindings.append(rb['servicename'])
+
+		if len(lb_bindings) > 0:
+			for rule in rule_names:
+				api.request('/config/lbvserver_service_binding/'+rule+'?args=servicename:'+lb_bindings.pop(0), method="DELETE")
 
 
 @bottle.route('/netscaler_redirect')
