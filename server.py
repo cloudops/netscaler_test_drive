@@ -78,6 +78,7 @@ log.addHandler(log_handler)
 @bottle.view('index')
 def index():
 	log.info("Control Panel requested...")
+	profile = conf.get('NETSCALER', 'active_profile')
 	# check config and see if i need to setup anything on first run...
 	if not conf.getboolean('DEFAULT', 'discovered'):
 		log.info("Doing environment discovery...")
@@ -160,7 +161,6 @@ def index():
 			bottle.redirect("/config_error")
 
 		# configure the active profile on page load...
-		profile = conf.get('NETSCALER', 'active_profile')
 		with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=True) as api:
 			## try and blow away all the potential configs
 			#try:
