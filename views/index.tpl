@@ -222,7 +222,7 @@
           </div>
           <div class="notify" style="display:none;"></div>
           <ul class="netscaler-profiles">
-            <li id="profile_1" class="profile">
+            <!--<li id="profile_1" class="profile">
                 <div class="profile-name">Load Balancing</div>
                 <div class="profile-desc">Spread traffic across multiple backend web servers</div>
                 <div class="profile-apply"><button>Apply</button></div
@@ -231,12 +231,12 @@
                 <div class="profile-name">Acceleration &amp; Optimization</div>
                 <div class="profile-desc">Optimize the load balanced traffic with compression</div>
                 <div class="profile-apply"><button>Apply</button></div>
-            </li>
-            <!--<li id="profile_3" class="profile">
+            </li>-->
+            <li id="profile_3" class="profile">
                 <div class="profile-name">Switching</div>
                 <div class="profile-desc">Utilize L7 content switching to serve different workloads from each web server</div>
                 <div class="profile-apply"><button>Apply</button></div>
-            </li>-->
+            </li>
           </ul>
           <div class="control-footer">
             Go to the <a href="/netscaler_redirect">Netscaler Config</a><br />
