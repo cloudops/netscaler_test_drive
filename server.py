@@ -167,6 +167,9 @@ def index():
 		#except:
 		#	pass
 
+		loaded_profile = api.request('/config/application?args=appname:'+profile)
+		log.info(loaded_profile)
+
 		# configure the active profile
 		payload = {
 			'sessionid':api.session,

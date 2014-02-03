@@ -218,7 +218,7 @@
         <div class="netscaler">
           <div class="section-header">Netscaler</div>
           <div class="control-desc">
-            Modify how the NetScaler delivers the content.
+            How the NetScaler delivers the content.
           </div>
           <div class="notify" style="display:none;"></div>
           <ul class="netscaler-profiles">
@@ -233,7 +233,7 @@
                 <div class="profile-apply"><button>Apply</button></div>
             </li>-->
             <li id="profile_3" class="profile">
-                <div class="profile-name">Switching</div>
+                <div class="profile-name">Content Switching</div>
                 <div class="profile-desc">Utilize L7 content switching to serve different workloads from each web server</div>
                 <div class="profile-apply"><button>Apply</button></div>
             </li>
