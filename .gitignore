@@ -4,3 +4,4 @@ creds/
 nitro_api.log
 server.log*
 server.conf
+logs/
