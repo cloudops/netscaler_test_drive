@@ -76,6 +76,7 @@ The creation of these graphs in the control panel is currently
 commented out in the file 'views/index.tpl'.
 Review the 'drawVisualizations()' function to enable.
 
+On each web server you want to collect memory usage on, do the following:
 (ubuntu: sudo apt-get install unzip libwww-perl libcrypt-ssleay-perl)
 $ scp -i ~/.ssh/<ssh_key>.pem ./cron/CloudWatchMonitoringScripts-v1.1.0.zip ec2-user@<instance>:~/.
 $ scp -i ~/.ssh/<ssh_key>.pem ./creds/awscreds.template ec2-user@<instance>:~/.
