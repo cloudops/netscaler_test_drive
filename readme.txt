@@ -33,6 +33,17 @@ The key currently being referenced is 'dddemotest.pem' as: 'ssh -i ./creds/dddem
 
 --- --- ---
 
+You need to create a './server.conf' file with the following information.
+
+[AWS]
+access_key = <aws access key>
+secret_key = <aws secret key>
+
+You will also want to verify that the default settings configured in
+'./server.py:24-57' are correct for your environment.
+
+--- --- ---
+
 If you implement the MEMORY USAGE functionality below,
 you will also need the file: './creds/awscreds.template'
 
@@ -51,7 +62,7 @@ However, three profiles are being sshed to the NetScaler.
 We can not enable all 3 profiles because of bugs on the NS.
 Once the bugs are fixed, enabling the 2 additional profiles 
 is as easy as uncommenting the UI for them in 
-'views/index.tpl' file on lines 225 to 234.
+'./views/index.tpl:225-234'
 
 
 
@@ -85,7 +96,7 @@ ADDITIONAL NOTES AND WORK AROUND DOCS
 There are permissions bugs on the NetScaler which require some permissions 
 changes to be done on the NetScaler prior to pushing the profiles.
 
-This code is at: 'server.py:101-104'
+This code is at: './server.py:101-104'
 (commands documented here for completeness)
 # fix the file permissions (as per a bug on the NS; Dec 2013)
 stdin1, stdout1, stderr1 = ns_ssh.exec_command('shell "chmod ugo+w /nsconfig/nstemplates/applications"')
@@ -109,7 +120,7 @@ content switching functionality in the profile.
 This is implemented as 'profile_3' and requires the 'fix_profile_3()' function
 to be run after profile_3 is imported.
 
-This code is at: 'server.py:250:272'
+This code is at: './server.py:250:272'
 
 --- --- ---
 
@@ -119,8 +130,8 @@ enabled by passing the 'metric' and 'prefix' as an
 arrays of strings instead of just strings.
 
 To better understand, review the following code: 
-Request sent from: views/index.tpl:drawVisualizations()
-Request handled at: server.py:444-476
+Request sent from:  ./views/index.tpl:drawVisualizations()
+Request handled at: ./server.py:444-476
 
 --- --- ---
 
