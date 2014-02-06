@@ -76,7 +76,7 @@ The creation of these graphs in the control panel is currently
 commented out in the file 'views/index.tpl'.
 Review the 'drawVisualizations()' function to enable.
 
-On each web server you want to collect memory usage on, do the following:
+On each web server you want to collect memory usage for, do the following:
 (ubuntu: sudo apt-get install unzip libwww-perl libcrypt-ssleay-perl)
 $ scp -i ~/.ssh/<ssh_key>.pem ./cron/CloudWatchMonitoringScripts-v1.1.0.zip ec2-user@<instance>:~/.
 $ scp -i ~/.ssh/<ssh_key>.pem ./creds/awscreds.template ec2-user@<instance>:~/.
@@ -94,7 +94,7 @@ ADDITIONAL NOTES AND WORK AROUND DOCS
 
 --- --- ---
 
-There are permissions bugs on the NetScaler which require some permissions 
+There are permission bugs on the NetScaler which require some  
 changes to be done on the NetScaler prior to pushing the profiles.
 
 This code is at: './server.py:101-104'
@@ -108,14 +108,14 @@ stdin3, stdout3, stderr3 = ns_ssh.exec_command('shell "chmod go+x /flash/nsconfi
 
 The default and only profile currently loaded is the Content Switching profile.
 Content switching is not supported by Application Templates as it
-only supports load balancing services.
+only supports the import of load balancing services.
 
 The underlying Application Template functionality supports Content Switching,
-but there is not support via the IMPORT functionality which is how
+but there is not support for the IMPORT functionality, which is how
 we are managing the different profiles.
 
 I have implemented a work around which removes a different service_binding
-from each of the two load balanced rules in order to recreate the 
+from each of the two load balanced rules after import in order to recreate the 
 content switching functionality in the profile.  
 
 This is implemented as 'profile_3' and requires the 'fix_profile_3()' function
@@ -130,7 +130,7 @@ has been developed, but was not used.  This functinality is
 enabled by passing the 'metric' and 'prefix' as an
 arrays of strings instead of just strings.
 
-To better understand, review the following code: 
+To better understand this functionality, review the code at: 
 Request sent from:  ./views/index.tpl:drawVisualizations()
 Request handled at: ./server.py:444-476
 
