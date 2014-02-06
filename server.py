@@ -7,6 +7,7 @@ import bottle
 from ConfigParser import ConfigParser
 from datetime import datetime, timedelta
 import gviz_api
+import json
 import logging
 import logging.handlers
 from nitro_api import NitroAPI
@@ -15,8 +16,6 @@ import os
 import paramiko
 import pprint
 import time
-import json
-import requests
 # depends on 'rocket' server
 
 # setup the conf object and set default values...
@@ -45,13 +44,13 @@ conf.set('NETSCALER', 'eip', '')
 conf.set('NETSCALER', 'mip', '')
 conf.set('NETSCALER', 'vip', '')
 
-load_generators = ['load_gen']
+load_generators = ['load_gen'] # NOTE: this is hardcoded in some places in the code...
 conf.add_section('LOADGENERATOR')
 for lg in load_generators:
 	conf.set('LOADGENERATOR', lg+'_id', '')
 	conf.set('LOADGENERATOR', lg+'_ip', '')
 
-webservers = ['web1', 'web2']
+webservers = ['web1', 'web2'] # NOTE: these is hardcoded in some places in the code...
 conf.add_section('WEBSERVERS')
 for ws in webservers:
 	conf.set('WEBSERVERS', ws+'_id', '')
@@ -97,24 +96,17 @@ def index():
 				with open("ns_profiles/profile_deployment.xml.tpl", "rt") as fin:
 					for line in fin:
 						fout.write(line.replace('{{netscaler_vip}}', conf.get('NETSCALER', 'vip')).replace('{{webserver_1_ip}}', conf.get('WEBSERVERS', 'web1_ip')).replace('{{webserver_2_ip}}', conf.get('WEBSERVERS', 'web2_ip')))
-			ns_ssh = ssh_client(conf.get('NETSCALER', 'host'), 22, conf.get('NETSCALER', 'user'), conf.get('NETSCALER', 'pass'))
 			
+			ns_ssh = ssh_client(conf.get('NETSCALER', 'host'), 22, conf.get('NETSCALER', 'user'), conf.get('NETSCALER', 'pass'))
 			# fix the file permissions (as per a bug on the NS; Dec 2013)
 			ns_stdin1, ns_stdout1, ns_stderr1 = ns_ssh.exec_command('shell "chmod ugo+w /nsconfig/nstemplates/applications"')
 			ns_stdin2, ns_stdout2, ns_stderr2 = ns_ssh.exec_command('shell "chmod ugo+w /nsconfig/nstemplates/applications/deployment_files"')
 			ns_stdin3, ns_stdout3, ns_stderr3 = ns_ssh.exec_command('shell "chmod go+x /flash/nsconfig"')
 
-			## debugging example
-			#log.info("stdout1: "+str(ns_stdout1.readlines()))
-			#log.info("stderr1: "+str(ns_stderr1.readlines()))
-			#log.info("stdout2: "+str(ns_stdout2.readlines()))
-			#log.info("stderr2: "+str(ns_stderr2.readlines()))
-			#log.info("stdout3: "+str(ns_stdout3.readlines()))
-			#log.info("stderr3: "+str(ns_stderr3.readlines()))
-
 			ns_sftp = ns_ssh.open_sftp()
-			#ns_sftp.put('ns_profiles/profile_1.xml', '/nsconfig/nstemplates/applications/profile_1.xml')
-			#ns_sftp.put('ns_profiles/profile_2.xml', '/nsconfig/nstemplates/applications/profile_2.xml')
+			# copy the profiles and the deployment file onto the NS
+			ns_sftp.put('ns_profiles/profile_1.xml', '/nsconfig/nstemplates/applications/profile_1.xml')
+			ns_sftp.put('ns_profiles/profile_2.xml', '/nsconfig/nstemplates/applications/profile_2.xml')
 			ns_sftp.put('ns_profiles/profile_3.xml', '/nsconfig/nstemplates/applications/profile_3.xml')
 			ns_sftp.put('ns_profiles/profile_deployment.xml', '/nsconfig/nstemplates/applications/deployment_files/profile_deployment.xml')
 
@@ -122,7 +114,7 @@ def index():
 			ns_ssh.close()
 			
 			with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=True) as api:
-				# enable features (this is required to get our rules to get run)
+				# enable features (this is required to get our rules to run otherwise the 'default' rule will always get run)
 				payload = {
 					'sessionid':api.session,
 					'onerror':'rollback',
@@ -132,7 +124,7 @@ def index():
 				}
 				api.request('/config/nsfeature?action=enable', payload)
 
-				# setup the IP addresses for the VIP and the MIP
+				# setup the IP addresses for the VIP and the MIP on the NS
 				if conf.get('NETSCALER', 'mip') and conf.get('NETSCALER', 'vip'):
 					for ip_type in ['mip', 'vip']:
 						payload = {
@@ -146,6 +138,7 @@ def index():
 						}
 						api.request('/config/nsip', payload)
 
+			# start the load generator
 			if conf.get('LOADGENERATOR', 'load_gen_ip') and conf.get('NETSCALER', 'vip'):
 				log.info("Attempting to start the Load Generator...")
 				now = str(time.time()).split(".")[0]
@@ -160,16 +153,8 @@ def index():
 			log.info("Resetting to 'undiscovered' because of a discovery error...")
 			bottle.redirect("/config_error")
 
-		# configure the active profile on page load...
+		# configure the active profile on discovery page load...
 		with NitroAPI(host=conf.get('NETSCALER', 'host'), username=conf.get('NETSCALER', 'user'), password=conf.get('NETSCALER', 'pass'), logging=True) as api:
-			## try and blow away all the potential configs
-			#try:
-			#	#api.request('/config/application?args=appname:profile_1', method='DELETE')
-			#	#api.request('/config/application?args=appname:profile_2', method='DELETE')
-			#	api.request('/config/application?args=appname:profile_3', method='DELETE')
-			#except:
-			#	pass
-
 			# configure the active profile
 			payload = {
 				'sessionid':api.session,
@@ -190,13 +175,15 @@ def index():
 			}
 			api.request('/config/nsconfig?action=save', payload)
 
+			# since content switching is not supported by default, we have to fix the imported profile if its 'profile_3'
 			if profile == 'profile_3':
 				fix_profile_3(api)
 
-		# now that everything has been discovered, we can save the config to the 'server.conf' file for future.
+		# now that everything has been discovered, we can save the config to the 'server.conf' file for future (eg: after reboot).
 		with open('./server.conf', 'w') as conf_file:
 			conf.write(conf_file)
 
+	# return the active profile and the web server ids to the 'index.tpl' template
 	return dict({
 		'webservers':[
 			{'name':'Web1', 'id':conf.get('WEBSERVERS', 'web1_id')},
@@ -209,9 +196,10 @@ def index():
 # config error page
 @bottle.route('/config_error')
 def config_error():
-	return '<b>Error configuring the environment...</b><br/><br /><a href="mailto:support@citrix.com?subject=NetScaler Test Drive Error">Please email Citrix</a> the contents of the <a href="/log">server log</a>...'
+	return '<b>Error configuring the environment...</b><br/><br /><a href="mailto:support@citrix.com?subject=NetScaler Test Drive Error">Please email Citrix</a> the contents of the <a href="/log" target="_blank">server log</a> and the <a href="/nitro" target="_blank">nitro log</a>...'
 
 
+# change the active profile configured on the NS
 @bottle.route('/apply_netscaler_profile')
 def apply_netscaler_profile():
 	profile = None
@@ -240,7 +228,7 @@ def apply_netscaler_profile():
 			if update_config != None and 'headers' in update_config:
 				# success, so update the active profile
 				conf.set('NETSCALER', 'active_profile', profile)
-				if profile == 'profile_3':
+				if profile == 'profile_3': # if profile_3, run the fix to get content switching working...
 					fix_profile_3(api)
 			else:
 				# failed, so let the client know which profile is active
@@ -284,6 +272,7 @@ def fix_profile_3(api):
 				api.request('/config/lbvserver_service_binding/'+rule+'?args=servicename:'+lb_bindings.pop(0), method="DELETE")
 
 
+# redirect to a logged in session on the NS
 @bottle.route('/netscaler_redirect')
 @bottle.view('netscaler_redirect')
 def netscaler_redirect():
@@ -294,7 +283,7 @@ def netscaler_redirect():
 	})
 
 
-# get graphing data
+# get data to be graphed in the UI
 @bottle.route('/get_data')
 def get_data():
 	if bottle.request.query.qs and bottle.request.query.tqx:
@@ -495,11 +484,12 @@ def get_cloudwatch_data(cloudviz_query, request_id, aws_access_key_id=None, aws_
 	return results
 
 
+# discover the environment and populate the 'conf' to be used throughout the application
 def discover_environment():
 	try:
 		if conf.get('AWS', 'access_key') and conf.get('AWS', 'secret_key'):
-			dashboard_instance_id = None # 'i-06abc632' #
-			try:
+			dashboard_instance_id = None
+			try: # get the control panels instance id from the 'ec2-metadata'
 				with os.popen("/opt/aws/bin/ec2-metadata") as f:
 					for line in f:
 						if line.startswith("instance-id:"):
@@ -508,6 +498,7 @@ def discover_environment():
 							break
 			except: pass
 
+			# continue discovery if we were able to determine the instance id of the machine we are running on
 			if dashboard_instance_id:
 				log.info("Creating a connection with AWS on region: "+conf.get('AWS', 'region'))
 				conn = boto.ec2.connect_to_region(conf.get('AWS', 'region'), aws_access_key_id=conf.get('AWS', 'access_key'), aws_secret_access_key=conf.get('AWS', 'secret_key'))
@@ -517,8 +508,8 @@ def discover_environment():
 				conf.set('DEFAULT', 'vpc_id', dashboard_instance[0].vpc_id)
 				log.info("Getting all instances in the VPC")
 				all_instances = conn.get_only_instances(filters={'vpc_id':dashboard_instance[0].vpc_id})
-				lgs = load_generators
-				wss = webservers
+				lgs = load_generators # grab the global names of the load generator machines
+				wss = webservers # grab the global names of the web servers
 				for instance in all_instances:
 					if instance.id == dashboard_instance_id or instance.state != 'running':
 						continue # skip this instance...
@@ -559,6 +550,7 @@ def discover_environment():
 		bottle.redirect("/config_error")
 
 
+# helper function for creating ssh sessions
 def ssh_client(server, port, username=None, password=None, key_filename=None):
     client = paramiko.SSHClient()
     client.load_system_host_keys()
@@ -581,7 +573,7 @@ else:
 	print "Logging Level: INFO"
 
 
-# start the server.
+# start the server
 bottle.run(
 	server='rocket', 
 	host=conf.get('DEFAULT', 'server_host'), 
