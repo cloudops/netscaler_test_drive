@@ -26,14 +26,10 @@ cd /path/to/netscaler_test_drive; python server.py
 
 configuration needed if building from scratch
 ---------------------------------------------
-Add an ssh key so the server can ssh to other
-machines in the environment.
+Modify the ssh key in './creds' so the server can ssh 
+to other machines in the environment.
 
-$ cd /path/to/netscaler_test_drive
-$ mkdir creds
-(place an ssh key file inside.  currently using a file named 'dddemotest.pem'.)
-
-This is currently being referenced as: 'ssh -i ./creds/dddemotest.pem ...'
+The key currently being referenced is 'dddemotest.pem' as: 'ssh -i ./creds/dddemotest.pem ...'
 
 --- --- ---
 
